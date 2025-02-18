@@ -1,0 +1,13 @@
+.venv/
+
+.idea/
+
+webfront/node_modules/
+
+template_manual.docx
+
+screenshot/
+
+backend/Introduction/
+
+chromedriver-win64/
