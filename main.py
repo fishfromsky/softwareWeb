@@ -8,6 +8,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from docx import Document
 from docx.shared import Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from openai import OpenAI
+import json
+import ast
 
 # Vue 项目路径
 vue_project_path = r"E:\ui_generator"
@@ -16,6 +19,16 @@ TXT_PATH = 'backend/Introduction/'
 IMAGE_PATH = 'screenshot'
 if not os.path.exists(IMAGE_PATH):
     os.makedirs(IMAGE_PATH)
+
+PLATFORM = '共享充电宝后台管理系统'
+
+LLM_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+LLM_API_KEY = 'sk-8fafb7bba6d04e45a989191a8820f7a1'
+
+client = OpenAI(
+    api_key=LLM_API_KEY,
+    base_url=LLM_BASE_URL
+)
 
 # 启动 Vue 项目
 def start_vue_project():
@@ -34,6 +47,32 @@ def start_vue_project():
 def stop_vue_project(process):
     process.terminate()
     print("Vue 项目已关闭。")
+
+def generate_config():
+    with open('backend/menu.json', 'r', encoding='utf-8') as f:
+        menu = json.load(f)
+        f.close()
+    json_str = json.dumps(menu, ensure_ascii=False)
+    MESSAGE = [{'role': 'system', 'content': 'You are a helpful programmer and product manager'}]
+    question = f"""
+    现在有一个名为{PLATFORM}的后台管理系统,其侧边栏为{json_str},请为其设计如下的一些配置信息:
+    1.开发硬件环境,包括处理器,内存,硬盘,显卡等配置信息.
+    2.运行硬件环境,包括处理器,内存,硬盘,带宽等配置信息.
+    3.开发目的,说明文字不少于300字.
+    4.功能描述,说明文字不少于600字.
+    5.以Object形式返回，返回内容开始以'{{'开头，不需要额外任何解释说明.
+    6.语言为中文
+    7.配置信息为纯文字说明,不需要换行
+    """
+    query = {'role': 'user', 'content': question}
+    MESSAGE.append(query)
+    completion = client.chat.completions.create(
+        model="qwen-coder-plus-latest",
+        messages=MESSAGE
+    )
+    data_dict = json.loads(completion.model_dump_json())
+    content = data_dict['choices'][0]['message']['content']
+    return content
 
 
 def take_screenshot(index, driver):
@@ -66,6 +105,12 @@ def main_process():
 
     # 启动浏览器
     driver = webdriver.Chrome(service=Service(chrome_driver_path), options=options)
+
+    driver.get('http://localhost:8080/login')
+    take_screenshot('0-0', driver)
+
+    driver.get('http://localhost:8080/register')
+    take_screenshot('0-1', driver)
 
     # 访问 Vue 项目
     driver.get("http://localhost:8080/")
@@ -158,24 +203,15 @@ def generate_word_template():
     config = [
         {
             'name': '环境描述',
-            'subsection': [
-                {
-                    'name': '开发的硬件环境',
-                    'content': '开发的硬件环境：处理器AMD 7900X，内存32GB，硬盘2TB，显卡AMDRX 7900 XT'
-                },
-                {
-                    'name': '运行的硬件环境',
-                    'content': '运行的硬件环境：CPU32核以上，内存32G以上，硬盘空间不低于400G，带宽不低于30Mbps'
-                }
-            ]
+            'subsection': []
         },
         {
             'name': '开发目的',
-            'content': '该软件旨在解决电动车充电过程中的管理难题，提高充电桩的使用效率，提升用户体验，支持绿色出行。'
+            'content': ''
         },
         {
             'name': '功能描述',
-            'content': '智能电动车充电桩控制程序主要功能包括充电管理、用户身份验证、实时监控和数据分析。用户可以通过手机应用或网页端查看充电桩的状态、剩余电量和充电时间，并进行远程启动和停止充电。此外，系统支持多用户管理，确保不同用户的充电记录和费用独立。充电桩管理模块可实现故障报警和维护提示，确保设备正常运行。数据分析模块对充电数据进行统计和分析，帮助运营方优化充电桩布局，提高使用效率。'
+            'content': ''
         }
     ]
 
@@ -183,6 +219,18 @@ def generate_word_template():
         'title': '使用说明',
         'subsection': []
     }
+
+    config_content = generate_config()
+    config_content = ast.literal_eval(config_content)
+
+    for i, key in enumerate(config_content.keys()):
+        if i < 2:
+            config[0]['subsection'].append({
+                'name': key,
+                'content': config_content[key]
+            })
+        else:
+            config[i-1]['content'] = config_content[key]
 
     for paragraph in doc.paragraphs:
         if '{{ title }}' in paragraph.text:

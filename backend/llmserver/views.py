@@ -52,11 +52,14 @@ def getMenuConfig(request):
     menu = data_dict['choices'][0]['message']['content']
     menu = json.loads(menu)
     MENU_CONFIG = menu
+    with open('menu.json', 'w', encoding='utf-8') as f:
+        json.dump(MENU_CONFIG, f)
+        f.close()
     response['menu'] = MENU_CONFIG
     return JsonResponse(response)
 
 
-# @require_http_methods(['GET'])
+@require_http_methods(['GET'])
 def getPageInfo(request):
     global PLATFORM
     global MENU_CONFIG
@@ -91,7 +94,7 @@ def getPageInfo(request):
     请根据你所生成的页面代码, 详细介绍该页面的业务功能以及使用说明, 有如下要求:
     1.代码部分和文字说明部分的中间以'*****'严格分割.
     2.说明部分仅仅使用文字说明, 无需引用任何代码格式(包括markdown).
-    3.说明部分第一行为当前侧边栏的名字, 随后下一行紧接着是具体的介绍文字, 中间无需插入额外符号(如换行符)
+    3.说明部分第一行为当前侧边栏的名字, 随后下一行紧接着是具体的介绍文字, 中间无需再插入额外符号(如换行符)
     4.介绍说明文字至少300字.
     """
     query = {'role': 'user', 'content': question}
@@ -102,12 +105,100 @@ def getPageInfo(request):
     )
     data_dict = json.loads(completion.model_dump_json())
     content = data_dict['choices'][0]['message']['content']
-    with open(os.path.join(TXT_PATH, menu_item+'.txt'), 'w', encoding='utf-8') as f:
+    with open(os.path.join(TXT_PATH, 'test'+menu_item+'.txt'), 'w', encoding='utf-8') as f:
+        f.write(content)
+        f.close()
+
+    return JsonResponse(response)
+
+@require_http_methods(['GET'])
+def getLoginInfo(request):
+    global PLATFORM
+    response = {'code': 0, 'message': 'success'}
+    MESSAGE = [{'role': 'system', 'content': 'You are a helpful programmer and product manager'}]
+    question = f"""
+        现在有一个后台管理系统叫{PLATFORM}, 请为其用户登录页面生成所对应的基于Vue.js的代码, 满足如下要求:
+         1.要求符合日常用户登录界面业务逻辑. 
+         2.组件基于element-ui框架.
+         3.除了登录按钮之外,还需要额外添加注册按钮.
+         4.内容包含标题,输入框以及按钮.
+         5.标题在输入框上方,距离输入框5vh.按钮在输入框下方,距离输入框底部5vh.
+         6.要求只返回页面代码部分, 代码只包含template部分和script部分, 不需要style部分. 以"<template>"开头, 以"<\/script>"结尾, 不需要其他任何解释说明内容.
+        """
+    query = {'role': 'user', 'content': question}
+    MESSAGE.append(query)
+    completion = client.chat.completions.create(
+        model="qwen-coder-plus-latest",
+        messages=MESSAGE
+    )
+    data_dict = json.loads(completion.model_dump_json())
+    content = data_dict['choices'][0]['message']['content']
+    response['content'] = content
+
+    question = f"""
+       请根据你所生成的页面代码, 详细介绍该页面的业务功能以及使用说明, 有如下要求:
+       1.代码部分和文字说明部分的中间以'*****'严格分割.
+       2.说明部分仅仅使用文字说明, 无需引用任何代码格式(包括markdown).
+       3.说明部分第一行为'用户登录', 随后下一行紧接着是具体的介绍文字, 中间无需再插入额外符号(如换行符)
+       4.介绍说明文字至少300字.
+       """
+    query = {'role': 'user', 'content': question}
+    MESSAGE.append(query)
+    completion = client.chat.completions.create(
+        model="qwen-coder-plus-latest",
+        messages=MESSAGE
+    )
+    data_dict = json.loads(completion.model_dump_json())
+    content = data_dict['choices'][0]['message']['content']
+    with open(os.path.join(TXT_PATH, '0-0.txt'), 'w', encoding='utf-8') as f:
         f.write(content)
         f.close()
 
     return JsonResponse(response)
 
 
-if __name__ == '__main__':
-    getPageInfo({})
+@require_http_methods(['GET'])
+def getRegisterInfo(request):
+    global PLATFORM
+    response = {'code': 0, 'message': 'success'}
+    MESSAGE = [{'role': 'system', 'content': 'You are a helpful programmer and product manager'}]
+    question = f"""
+            现在有一个后台管理系统叫{PLATFORM}, 请为其用户注册页面生成所对应的基于Vue.js的代码, 满足如下要求:
+             1.要求符合日常用户注册界面业务逻辑. 
+             2.组件基于element-ui框架.
+             3.内容包含标题,输入框以及注册按钮.
+             4.输入框至少包括姓名,电话号码,验证码,密码,确认密码,你也可以自由发挥再增添一下注册内容.
+             5.电话号码输入框旁有一个获取验证码的按钮并排.
+             5.标题在输入框上方,距离输入框5vh.按钮在输入框下方,距离输入框底部5vh.
+             6.要求只返回页面代码部分, 代码只包含template部分和script部分, 不需要style部分. 以"<template>"开头, 以"<\/script>"结尾, 不需要其他任何解释说明内容.
+            """
+    query = {'role': 'user', 'content': question}
+    MESSAGE.append(query)
+    completion = client.chat.completions.create(
+        model="qwen-coder-plus-latest",
+        messages=MESSAGE
+    )
+    data_dict = json.loads(completion.model_dump_json())
+    content = data_dict['choices'][0]['message']['content']
+    response['content'] = content
+
+    question = f"""
+           请根据你所生成的页面代码, 详细介绍该页面的业务功能以及使用说明, 有如下要求:
+           1.代码部分和文字说明部分的中间以'*****'严格分割.
+           2.说明部分仅仅使用文字说明, 无需引用任何代码格式(包括markdown).
+           3.说明部分第一行为'用户注册', 随后下一行紧接着是具体的介绍文字, 中间无需再插入额外符号(如换行符)
+           4.介绍说明文字至少300字.
+           """
+    query = {'role': 'user', 'content': question}
+    MESSAGE.append(query)
+    completion = client.chat.completions.create(
+        model="qwen-coder-plus-latest",
+        messages=MESSAGE
+    )
+    data_dict = json.loads(completion.model_dump_json())
+    content = data_dict['choices'][0]['message']['content']
+    with open(os.path.join(TXT_PATH, '0-1.txt'), 'w', encoding='utf-8') as f:
+        f.write(content)
+        f.close()
+
+    return JsonResponse(response)
