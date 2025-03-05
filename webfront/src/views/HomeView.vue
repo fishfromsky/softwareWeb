@@ -20,7 +20,8 @@ export default {
       itemList: {},
       page_code: '',
       loading: true,
-      card_loading: true
+      card_loading: true,
+      env: {}
     }
   },
   methods: {
@@ -32,7 +33,9 @@ export default {
           url: 'api/getpageinfo',
           method: 'get',
           params: {
-            'index': index
+            'index': index,
+            'username': this.$store.state.username,
+            'datetime': this.$store.state.datetime
           }
         }).then(res=>{
           var content = res.data.content
@@ -44,9 +47,14 @@ export default {
       }
     },
     getMenu(){
+      var params = {
+        'username': this.$store.state.username,
+        'datetime': this.$store.state.datetime
+      }
       this.$http({
         url: 'api/getmenu',
-        method: 'get'
+        method: 'get',
+        params: params
       }).then(res=>{
         this.index = '1-1'
         this.itemList = res.data.menu

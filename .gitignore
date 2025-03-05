@@ -4,10 +4,14 @@
 
 webfront/node_modules/
 
-template_manual.docx
+backend/medium/
 
-screenshot/
+backend/screenshot/
 
 backend/Introduction/
+
+backend/static/
+
+backend/backend/settings.py
 
 chromedriver-win64/

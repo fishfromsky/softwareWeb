@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 
+import pymysql
+pymysql.install_as_MySQLdb()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -39,7 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'llmserver',
     'corsheaders',
-    'rest_framework'
+    'rest_framework',
+    'rest_framework.authtoken'
 ]
 
 MIDDLEWARE = [
@@ -81,10 +85,21 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'llmweb',
+        'USER': 'root',  # 数据库用户名
+        'PASSWORD': 'woaiwoziji123',  # 数据库密码
+        'HOST': '127.0.0.1',  # 数据库主机，通常为localhost
+        'PORT': '3306',  # 数据库端口，默认3306
     }
 }
+
+
+LLM_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+LLM_API_KEY = 'sk-8fafb7bba6d04e45a989191a8820f7a1'
+
+BACKEND_LLM_KEY = 'sk-c573572c476548509cc016d99501375d',
+BACKEND_LLM_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1',
 
 
 # Password validation
@@ -123,7 +138,8 @@ DEFAULT_CHARSET = 'utf-8'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

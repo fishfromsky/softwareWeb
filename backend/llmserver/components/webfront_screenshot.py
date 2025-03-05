@@ -10,29 +10,39 @@ from docx.shared import Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from openai import OpenAI
 import json
-import ast
+import sys
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(BASE_DIR)
+
+from backend import settings
 
 # Vue 项目路径
-vue_project_path = r"E:\ui_generator"
+vue_project_path = os.path.join(os.path.dirname(BASE_DIR), 'webfront')
 
-TXT_PATH = 'backend/Introduction/'
-IMAGE_PATH = 'screenshot'
-if not os.path.exists(IMAGE_PATH):
-    os.makedirs(IMAGE_PATH)
-
-PLATFORM = '共享充电宝后台管理系统'
-
-LLM_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
-LLM_API_KEY = 'sk-8fafb7bba6d04e45a989191a8820f7a1'
 
 client = OpenAI(
-    api_key=LLM_API_KEY,
-    base_url=LLM_BASE_URL
+    api_key=settings.LLM_API_KEY,
+    base_url=settings.LLM_BASE_URL
 )
 
+
+def write_env_file(username, datetime):
+    env_file_path = os.path.join(os.path.dirname(BASE_DIR), 'webfront', 'user.json')
+
+    user_dict = {
+        'username': username,
+        'datetime': datetime
+    }
+
+    with open(env_file_path, 'w') as json_file:
+        json.dump(user_dict, json_file)
+
 # 启动 Vue 项目
-def start_vue_project():
+def start_vue_project(username, datetime):
+    env = os.environ.copy()
     # 进入 Vue 项目目录并启动开发服务器
+    write_env_file(username, datetime)
     process = subprocess.Popen(
         ["npm", "run", "serve"],
         cwd=vue_project_path,
@@ -48,8 +58,8 @@ def stop_vue_project(process):
     process.terminate()
     print("Vue 项目已关闭。")
 
-def generate_config():
-    with open('backend/menu.json', 'r', encoding='utf-8') as f:
+def generate_config(PLATFORM, username, datetime):
+    with open(os.path.join(BASE_DIR, 'medium', username, datetime, 'menu.json'), 'r', encoding='utf-8') as f:
         menu = json.load(f)
         f.close()
     json_str = json.dumps(menu, ensure_ascii=False)
@@ -61,6 +71,7 @@ def generate_config():
     3.开发目的,说明文字不少于300字.
     4.功能描述,说明文字不少于600字.
     5.以Object形式返回，返回内容开始以'{{'开头，不需要额外任何解释说明.
+    6.Object的Key也需要使用双引号引起来
     6.语言为中文
     7.配置信息为纯文字说明,不需要换行
     """
@@ -75,7 +86,7 @@ def generate_config():
     return content
 
 
-def take_screenshot(index, driver):
+def take_screenshot(index, driver, IMAGE_PATH):
     script = f"""
         window.dataLoaded = false;
         window.addEventListener('data-loaded_{index}', () => {{
@@ -92,30 +103,30 @@ def take_screenshot(index, driver):
     print(f"截图已保存为 {screenshot_path}")
 
 
-def main_process():
-    chrome_driver_path = r"chromedriver-win64\chromedriver.exe"
+def main_process(IMAGE_PATH):
+    chrome_driver_path = os.path.join(os.path.dirname(BASE_DIR), "chromedriver-win64", "chromedriver.exe")
     # 配置 Selenium 使用 Chrome 浏览器
     options = webdriver.ChromeOptions()
     options.add_experimental_option("detach", True)  # 让 Chrome 保持打开，不会自动关闭
     options.add_argument("--start-maximized")  # 启动时窗口最大化
     options.add_argument("--disable-blink-features=AutomationControlled")  # 规避检测
-    # options.add_argument("--headless")  # 无头模式
-    # options.add_argument("--disable-gpu")  # 禁用 GPU 加速
-    # options.add_argument("--window-size=1280,800")  # 设置窗口大小
+    options.add_argument("--headless")  # 无头模式
+    options.add_argument("--disable-gpu")  # 禁用 GPU 加速
+    options.add_argument("--window-size=2880,1562")  # 设置窗口大小
 
     # 启动浏览器
     driver = webdriver.Chrome(service=Service(chrome_driver_path), options=options)
 
     driver.get('http://localhost:8080/login')
-    take_screenshot('0-0', driver)
+    take_screenshot('0-0', driver, IMAGE_PATH)
 
     driver.get('http://localhost:8080/register')
-    take_screenshot('0-1', driver)
+    take_screenshot('0-1', driver, IMAGE_PATH)
 
     # 访问 Vue 项目
     driver.get("http://localhost:8080/")
 
-    take_screenshot('1-1', driver)
+    take_screenshot('1-1', driver, IMAGE_PATH)
 
     try:
         sidebarItems = driver.find_element(By.ID, 'menu')
@@ -124,8 +135,20 @@ def main_process():
             try:
                 sub_menu = parent.find_element(By.XPATH, ".//following-sibling::ul")  # 这里假设子菜单是 <ul> 标签
                 if not sub_menu.is_displayed():
-                    parent.click()  # **如果子目录未显示，则点击父目录展开**
-                    time.sleep(1)  # 等待展开
+                    # 折叠其他已经展开的父菜单
+                    for other_parent in parent_items:
+                        if other_parent != parent:  # 排除当前父菜单
+                            try:
+                                other_sub_menu = other_parent.find_element(By.XPATH, ".//following-sibling::ul")
+                                if other_sub_menu.is_displayed():
+                                    other_parent.click()  # 点击其他父菜单以折叠其子菜单
+                                    time.sleep(1)  # 等待折叠动画完成
+                            except:
+                                print("无法折叠其他父菜单，可能结构不同")
+
+                    # 展开当前父菜单
+                    parent.click()  # 点击当前父菜单以展开子菜单
+                    time.sleep(1)  # 等待展开动画完成
             except:
                 print("无法找到子菜单，可能结构不同")
 
@@ -134,8 +157,7 @@ def main_process():
                 sub_item.click()
                 menu_index = str(index+1)+'-'+str(sub_index+1)
                 if menu_index != '1-1':
-                    take_screenshot(menu_index, driver)
-
+                    take_screenshot(menu_index, driver, IMAGE_PATH)
 
     except Exception as e:
         print("无法找到侧边栏目录:", e)
@@ -144,19 +166,19 @@ def main_process():
     driver.quit()
 
 # 主函数
-def main():
+def main(username, datetime, IMAGE_PATH):
     # 启动 Vue 项目
-    # vue_process = start_vue_project()
+    vue_process = start_vue_project(username, datetime)
 
     # 等待 Vue 项目启动
-    # time.sleep(10)
+    time.sleep(10)
 
     # try:
         # 截图
-    main_process()
+    main_process(IMAGE_PATH)
     # finally:
     #     # 关闭 Vue 项目
-    #     stop_vue_project(vue_process)
+    stop_vue_project(vue_process)
 
 
 def read_txt_file(filename):
@@ -189,14 +211,13 @@ def get_image_info(file):
             return os.path.join(IMAGE_PATH, file)
 
 
-def generate_word_template():
-    doc = Document('template.docx')
+def generate_word_template(title, user, time, TXT_PATH):
+    doc = Document(os.path.join(BASE_DIR, 'medium', 'template.docx'))
 
     main_info = {
-        'title': '共享充电宝后台管理系统V1.0',
+        'title': title,
         'table': [
-            {'version': 'v1.0', 'date': '2025-02-18', 'name': '张三', 'info': '初始版本'},
-            {'version': 'v1.1', 'date': '2025-03-15', 'name': '张三', 'info': '增加数据统计页面'},
+            {'version': 'v1.0', 'date': time, 'name': user, 'info': '初始版本'},
         ]
     }
 
@@ -220,8 +241,8 @@ def generate_word_template():
         'subsection': []
     }
 
-    config_content = generate_config()
-    config_content = ast.literal_eval(config_content)
+    config_content = generate_config(title, user, time)
+    config_content = json.loads(config_content, strict=False)
 
     for i, key in enumerate(config_content.keys()):
         if i < 2:
@@ -269,9 +290,25 @@ def generate_word_template():
         paragraph.add_run().add_picture(section['image'], width=Inches(5.5))
         doc.add_paragraph(section['content'])
 
-    doc.save('template_manual.docx')
+    doc_save_path = os.path.join(BASE_DIR, 'static', user, time, 'template_manual.docx')
+    doc.save(doc_save_path)
 
 
-if __name__ == "__main__":
-    # main()
-    generate_word_template()
+if __name__ == '__main__':
+    platform = sys.argv[1]
+    username = sys.argv[2]
+    datetime = sys.argv[3]
+
+    final_path = os.path.join(BASE_DIR, 'static', username, datetime)
+    if not os.path.exists(final_path):
+        os.makedirs(final_path)
+
+    TXT_PATH = os.path.join(BASE_DIR, 'Introduction', username, datetime)
+    IMAGE_PATH = os.path.join(BASE_DIR, 'screenshot', username, datetime)
+    if not os.path.exists(IMAGE_PATH):
+        os.makedirs(IMAGE_PATH)
+    if not os.path.exists(TXT_PATH):
+        os.makedirs(TXT_PATH)
+
+    main(username, datetime, IMAGE_PATH)
+    generate_word_template(platform, username, datetime, TXT_PATH)

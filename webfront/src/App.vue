@@ -6,6 +6,7 @@
 </template>
 
 <script>
+import data from '../user.json'
 import navHeader from '@/views/NavHeader/index.vue'
 export default {
   name: 'App',
@@ -19,15 +20,21 @@ export default {
   },
   methods: {
     getPlatformName(){
+      var params = {
+        'username': this.$store.state.username,
+        'datetime': this.$store.state.datetime
+      }
       this.$http({
         url: 'api/getname',
-        method: 'get'
+        method: 'get',
+        params: params
       }).then(res=>{
         this.headername = res.data.name
       })
     }
   },
   created(){
+    this.$store.dispatch('updateUser', data)
     this.getPlatformName()
   }
 }

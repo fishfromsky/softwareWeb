@@ -16,9 +16,14 @@ export default {
   },
   methods: {
     getPageCode(){
+      var params = {
+        'username': this.$store.state.username,
+        'datetime': this.$store.state.datetime
+      }
       this.$http({
-        url: 'api/getlogin',
-        method: 'get'
+        url: 'api/getpagemain',
+        method: 'get',
+        params: params
       }).then(res=>{
           var content = res.data.content
           var templateStr = content.replace(/<\/script>/g, '<\\/script>')
