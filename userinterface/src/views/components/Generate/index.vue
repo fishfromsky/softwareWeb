@@ -39,33 +39,39 @@ data() {
     form: {
       name: '',
       language: ''
-    }
+    },
+    lastClickTime: null // Add lastClickTime to track the last click time
   }
 },
-  methods: {
-    onSubmit() {
-      let time = this.getTime()
-      if (this.form.language == ''){
-        this.$message.error('请输入编程语言')
-      }
-      else if (this.form.name == ''){
-        this.$message.error('请输入软著名称!')
-      }
-      else{
-        var dataForm = {
-          'id': Cookies.get('user_id'),
-          'username': Cookies.get('username'),
-          'platform': this.form.name,
-          'language': this.form.language,
-          'time': time
-        }
-        console.log(dataForm)
+methods: {
+  onSubmit() {
+    const currentTime = new Date().getTime();
+    if (this.lastClickTime && (currentTime - this.lastClickTime < 1000)) {
+      this.$message.error('请勿频繁点击');
+      return;
+    }
+    this.lastClickTime = currentTime;
+
+    let time = this.getTime()
+    if (this.form.language == ''){
+      this.$message.error('请输入编程语言')
+    }
+    else if (this.form.name == ''){
+      this.$message.error('请输入软著名称!')
+    }
+    else{
+      var dataForm = {
+        'id': Cookies.get('user_id'),
+        'username': Cookies.get('username'),
+        'platform': this.form.name,
+        'language': this.form.language,
+        'time': time
       }
       this.$http.post('api/runprogram', dataForm).then(res=>{
         this.$message.success('运行成功, 请耐心等待')
-        // this.$router.push('/manage')
       })
-    },
+    }
+  },
     getTime(){
       const now = new Date();
       const year = now.getFullYear();

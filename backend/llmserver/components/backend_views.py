@@ -3,13 +3,13 @@ import os
 import json
 from docx import Document
 import re
-from django.conf import settings
+import concurrent.futures
 import sys
+from pdf_views import main_pdf
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
 
-from pdf_views import main_pdf
-from tenacity import retry, stop_after_attempt, wait_exponential
 from backend import settings
 
 client = OpenAI(
@@ -17,19 +17,14 @@ client = OpenAI(
     base_url=settings.BACKEND_LLM_URL[0],
 )
 
-# 定义调用deepseek-r3大模型的函数，用于语义理解
 def get_model_response(user_message):
-    # 发送请求生成回答
+    message = [{'role': 'user', 'content': user_message}]
     try:
         completion = client.chat.completions.create(
-            model="deepseek-v3",  # 使用 deepseek-v1 模型
-            messages=[  # 传递消息
-                {'role': 'user', 'content': user_message}  # 用户提问的内容
-            ]
+            model="qwen-plus",
+            messages=message
         )
-        reasoning_content = completion.choices[0].message.reasoning_content
-        content = completion.choices[0].message.content
-        return reasoning_content, content
+        return json.loads(completion.model_dump_json())['choices'][0]['message']['content']
     except Exception as e:
         raise e
 
@@ -44,14 +39,6 @@ def get_response(messages):
     except Exception as e:
         raise e
 
-
-@retry(stop=stop_after_attempt(10), wait=wait_exponential(multiplier=1, min=2, max=15))
-def api_call_deepseek(message):
-    return get_model_response(message)
-
-@retry(stop=stop_after_attempt(10), wait=wait_exponential(multiplier=1, min=2, max=15))
-def api_call(message):
-    return get_response(message)
 
 # 保存模型输出内容到txt文件
 def save_to_txt(content, filename):
@@ -82,6 +69,7 @@ def read_json_file(file_path):
         print(f"读取文件时出错: {e}")
         return None
 
+
 # 读取 JSON 文件内容并调用大模型理解
 def analyze_file(file_path, txt_file_path):
     file_data = read_json_file(file_path)
@@ -92,12 +80,8 @@ def analyze_file(file_path, txt_file_path):
         question = f"请理解以下JSON文件内容并回答：{file_content}"
 
         # 调用大模型获取回答
-        reasoning, answer = api_call_deepseek(question)
+        answer = get_model_response(question)
 
-        # 打印思考过程和最终答案
-        # print("思考过程：")
-        # print(reasoning)
-        #
         # print("最终答案：")
         # print(answer)
 
@@ -112,11 +96,14 @@ def analyze_file(file_path, txt_file_path):
 
 
 # 第一次提问：扩展软件信息
-def first_prompt(software_name, programming_language, txt_file_path, final_txt_path):
+def first_prompt(software_name, programming_language, txt_file_path, final_path):
     messages = [{
         'role': 'system',
         'content': 'You are a helpful assistant that expands software descriptions based on input.'
     }]
+    # # 获取编程语言的输入
+    # programming_language = input("请输入软件的编程语言：")
+    # 扩展软件描述的模板
     user_input = f"请根据以下框架信息扩展对{software_name}这一软件著作权的软件描述\n"
     user_input += f"""
     扩展软件描述的模板如下：
@@ -129,31 +116,33 @@ def first_prompt(software_name, programming_language, txt_file_path, final_txt_p
     【软件开发环境/开发工具】
     【该软件的运行平台/操作系统】
     【软件运行支撑环境/支持软件】
-    【编程语言】{programming_language}
+    【编程语言】{programming_language}  # 使用用户输入的编程语言
     【源程序量】
     【开发目的】
     【面向领域/行业】
     【软件的主要功能】
     【软件的技术特点】
     """
+
     messages.append({'role': 'user', 'content': user_input})
 
     # 获取模型返回的完整内容
-    assistant_output = api_call(messages).choices[0].message.content
+    assistant_output = get_response(messages).choices[0].message.content
 
     # print(f'第一次提问的输出：\n{assistant_output}')
 
     # 保存到指定txt文件
     save_to_txt(assistant_output, txt_file_path)
-    save_to_txt(assistant_output, final_txt_path)
+    save_to_txt(assistant_output, final_path)
 
     return assistant_output
+
 
 # 第二次提问：生成代码框架，包含模块分析
 def second_prompt(programming_language, expanded_description, txt_file_path):
     messages = [{
         'role': 'system',
-        'content': f'You are a helpful assistant that generates a {programming_language} framework based on software descriptions, and includes detailed descriptions and comments for each module.'
+        'content': f'You are a helpful assistant that generates {programming_language} code framework based on software descriptions, and includes detailed descriptions and comments for each module.'
     }]
     user_input = f"根据以下软件描述，生成{programming_language}代码框架，并为每个模块加入详细描述和注释：\n{expanded_description}\n"
     user_input += """
@@ -166,7 +155,7 @@ def second_prompt(programming_language, expanded_description, txt_file_path):
     """
     messages.append({'role': 'user', 'content': user_input})
 
-    assistant_output = api_call(messages).choices[0].message.content
+    assistant_output = get_response(messages).choices[0].message.content
     # print(f'第二次提问的输出：\n{assistant_output}')
 
     # 保存到指定txt文件
@@ -184,21 +173,19 @@ def generate_code_with_details(programming_language, layer, code_framework):
     user_input = f"理解下面描述中关于{layer}的部分，并为每个模块生成详细注释的{programming_language}代码, 不包含任何额外的描述，且代码内容不应包含其他格式的解释或说明，不少于500行：\n{code_framework}\n"
     messages.append({'role': 'user', 'content': user_input})
 
-    assistant_output = api_call(messages).choices[0].message.content
+    assistant_output = get_response(messages).choices[0].message.content
 
     # 过滤掉不需要的内容：删除以“Below is a detailed...”开头的描述性文字、代码块标记、注释等
     # 删除以 ``` 开头的行和其余内容
     code_only = re.sub(r"(?i)^(below is a detailed.*|python\s*|code follows.*|the code is).*", "", assistant_output)
     code_only = re.sub(r"^```.*", "", code_only)  # 删除以 ``` 开头的行
 
-    # 去除所有注释行（以#开头的行）
-    # code_only = re.sub(r"#.*", "", code_only)
-
     # 删除空行，确保代码紧凑
     code_only = "\n".join([line for line in code_only.split("\n") if line.strip() != ""])
 
     # print(f'{layer}层生成的代码：\n{code_only}')
     return code_only
+
 
 # 细化每个模块的代码生成，修改生成“用户表设计”模块的部分
 def generate_submodules_for_layer(programming_language, layer_name, code_framework, json_answer=None):
@@ -225,13 +212,27 @@ def generate_submodules_for_layer(programming_language, layer_name, code_framewo
     return "\n".join(all_code)
 
 
-# 保存所有代码到指定路径的Word文档
-def save_all_code_to_word(codes, output_path):
-    try:
-        file_path = os.path.join(output_path, "software_code.docx")
-        save_to_word("\n\n".join(codes), file_path)
-    except Exception as e:
-        print(f"保存所有代码到Word时出错: {e}")
+# 并发生成所有层代码
+def generate_all_layers_concurrently(programming_language, code_framework, json_answer=None):
+    layer_names = ["后端", "数据库", "API", "业务", "安全"]
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_to_layer = {
+            executor.submit(generate_submodules_for_layer, programming_language, layer, code_framework,
+                            json_answer if layer == "数据库" else None): layer
+            for layer in layer_names
+        }
+
+        results = {}
+        for future in concurrent.futures.as_completed(future_to_layer):
+            layer_name = future_to_layer[future]
+            try:
+                results[layer_name] = future.result()
+                print(f"{layer_name} 代码生成完成！")
+            except Exception as e:
+                print(f" {layer_name} 代码生成失败: {e}")
+
+    return results
 
 
 # 合并多个Word文档为一个
@@ -254,60 +255,43 @@ def merge_word_documents(file_paths, output_path):
         print(f"保存合并文档时出错: {e}")
 
 
-def generate_code_word(software_name, programming_language, username, time):
-    medium_path = os.path.join(BASE_DIR, 'medium', username, time)
-    final_path = os.path.join(BASE_DIR, 'static', username, time)
-    if not os.path.exists(medium_path):
-        os.makedirs(medium_path)
-    if not os.path.exists(final_path):
-        os.makedirs(final_path)
-    # 其余部分和原代码保持不变
-    expanded_description = first_prompt(software_name, programming_language,
-        os.path.join(medium_path, "expanded_description.txt"), os.path.join(final_path, 'expanded_description.txt'))  # 第一次提问，获得对软著名的扩充描述，并保存到txt
-    code_framework = second_prompt(programming_language, expanded_description,
-                                   os.path.join(medium_path, "code_framework.txt"))  # 第二次提问，获得对软著实现的框架性语言，并保存到txt
-
-    # 调用函数，传入文件路径
-    file_path = os.path.join(medium_path, 'menu.json')  # 替换为你想要读取的 JSON 文件路径
-    json_answer = analyze_file(file_path, os.path.join(medium_path, "json_analysis.txt"))  # 获得对后续数据库代码实现的补充提示词，并保存到txt
-
-    # 获取后端层到其他层的代码实现，加入详细描述和注释
-    backend_code = generate_submodules_for_layer(programming_language, "后端", code_framework)
-    database_code = generate_submodules_for_layer(programming_language, "数据库", code_framework)
-    api_code = generate_submodules_for_layer(programming_language, "API", code_framework)
-    business_code = generate_submodules_for_layer(programming_language, "业务", code_framework)
-    security_code = generate_submodules_for_layer(programming_language, "安全", code_framework)
-
-    # 保存每个层的代码到不同的Word文档中
-    save_to_word(backend_code, os.path.join(medium_path, "backend_code.docx"))
-    print('后端层代码已保存')
-    save_to_word(database_code, os.path.join(medium_path, "database_code.docx"))
-    print('数据库层代码已保存')
-    save_to_word(api_code, os.path.join(medium_path, "api_code.docx"))
-    print('API层代码已保存')
-    save_to_word(business_code, os.path.join(medium_path, "business_code.docx"))
-    print('业务层代码已保存')
-    save_to_word(security_code, os.path.join(medium_path, "security_code.docx"))
-    print('安全层代码已保存')
-
-    # 合并文档
-    file_paths = [
-        os.path.join(medium_path, "backend_code.docx"),
-        os.path.join(medium_path, "database_code.docx"),
-        os.path.join(medium_path, "api_code.docx"),
-        os.path.join(medium_path, "business_code.docx"),
-        os.path.join(medium_path, "security_code.docx")
-    ]
-
-    output_path_2 = os.path.join(final_path, "merged_code.docx")  # 指定合并后的输出路径
-
-    merge_word_documents(file_paths, output_path_2)
-
-
-if __name__ == '__main__':
+# 运行主要流程
+if __name__ == "__main__":
     platform = sys.argv[1]
     language = sys.argv[2]
     username = sys.argv[3]
     datetime = sys.argv[4]
-    generate_code_word(platform, language, username, datetime)
+
+    medium_path = os.path.join(BASE_DIR, 'medium', username, datetime)
+    final_path = os.path.join(BASE_DIR, 'static', username, datetime)
+    if not os.path.exists(medium_path):
+        os.makedirs(medium_path)
+    if not os.path.exists(final_path):
+        os.makedirs(final_path)
+    # 定义保存代码的路径
+    output_path_1 = medium_path  # 保存各层的代码文档
+    output_path_2 = final_path  # 保存合并后的总代码文档
+
+    # 第1次提问:扩充软著描述，第2次提问：软著实现整体框架
+    expanded_description = first_prompt(platform, language, os.path.join(medium_path, "expanded_description.txt"),
+                                        os.path.join(final_path, "expanded_description.txt"))  # 第一次提问，获得对软著名的扩充描述，并保存到txt
+    code_framework = second_prompt(language, expanded_description,os.path.join(medium_path, "code_framework.txt"))  # 第二次提问，获得对软著实现的框架性语言，并保存到txt
+
+    # 调用函数，传入文件路径
+    file_path = os.path.join(medium_path, 'menu.json')
+    json_answer = analyze_file(file_path, os.path.join(medium_path, "json_analysis.txt"))  # 获得对后续数据库代码实现的补充提示词，并保存到txt
+
+    # 并发生成代码
+    layer_codes = generate_all_layers_concurrently(language, code_framework, json_answer)
+
+    # 保存各层代码到 Word 文件
+    file_paths = []  # 存储各层代码word文档的地址，方便后续合并
+    for layer, code in layer_codes.items():  # 获取键值对，层名-代码
+        file_path = os.path.join(output_path_1, f"{layer}_code.docx")
+        save_to_word(code, file_path)
+        file_paths.append(file_path)
+
+    # 合并所有代码文件
+    merged_file_path = os.path.join(output_path_2, "merged_code.docx")
+    merge_word_documents(file_paths, merged_file_path)
     main_pdf(username, datetime)

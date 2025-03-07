@@ -15,3 +15,5 @@ backend/static/
 backend/backend/settings.py
 
 chromedriver-win64/
+
+chrome-win64/
