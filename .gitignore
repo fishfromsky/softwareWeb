@@ -2,6 +2,8 @@
 
 .idea/
 
+backend/backend/settings.py
+
 webfront/node_modules/
 
 backend/medium/
@@ -11,8 +13,6 @@ backend/screenshot/
 backend/Introduction/
 
 backend/static/
-
-backend/backend/settings.py
 
 chromedriver-win64/
 
