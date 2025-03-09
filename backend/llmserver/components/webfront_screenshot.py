@@ -212,10 +212,10 @@ def main_process(IMAGE_PATH, port, username, datetime):
     if not os.path.exists(user_path):
         os.makedirs(user_path)
 
-    chrome_driver_path = os.path.join(os.path.dirname(BASE_DIR), "chromedriver-win64", "chromedriver.exe")
+    chrome_driver_path = os.path.join(os.path.dirname(BASE_DIR), "chromedriver", "chromedriver.exe")
     # 配置 Selenium 使用 Chrome 浏览器
     options = webdriver.ChromeOptions()
-    options.binary_location = os.path.join(os.path.dirname(BASE_DIR), "chrome-win64", "chrome.exe")
+    options.binary_location = os.path.join(os.path.dirname(BASE_DIR), "chrome", "chrome.exe")
     options.add_experimental_option("detach", True)  # 让 Chrome 保持打开，不会自动关闭
     options.add_argument("--disable-application-cache")
     options.add_argument(f"--user-data-dir={user_path}")  # 配置独立的用户数据目录

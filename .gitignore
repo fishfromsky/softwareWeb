@@ -6,6 +6,10 @@ backend/backend/settings.py
 
 webfront/node_modules/
 
+userinterface/node_modules/
+
+userinterface/dist/
+
 backend/medium/
 
 backend/screenshot/
@@ -14,6 +18,6 @@ backend/Introduction/
 
 backend/static/
 
-chromedriver-win64/
+chromedriver/
 
-chrome-win64/
+chrome/
