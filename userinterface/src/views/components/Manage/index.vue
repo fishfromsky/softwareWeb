@@ -1,6 +1,6 @@
 <template>
     <div>
-        <el-table :data="tableData" style="width: 100%">
+        <el-table :data="tableData" style="width: 100%" v_loading=""table_loading>
             <el-table-column prop="name" label="软著名称" ></el-table-column>
             <el-table-column prop="time" label="创建时间"></el-table-column>
             <el-table-column prop="language" label="后端代码语言"></el-table-column>
@@ -41,15 +41,13 @@ export default {
         return {
             tableData: [
                
-            ]
+            ],
+            table_loading: true
         };
     },
     methods: {
         handleDownload(url) {
             window.open(url, '_blank');
-        },
-        handleEdit(index, row) {
-            console.log('Edit:', index, row);
         },
         handleDelete(index, row) {
             MessageBox.confirm('此操作将永久删除该记录, 是否继续?', '提示', {
@@ -57,6 +55,7 @@ export default {
                 cancelButtonText: '取消',
                 type: 'warning'
             }).then(() => {
+                this.table_loading = true
                 var record_id = row.id
                 var params = {
                     'record_id': record_id
@@ -86,7 +85,7 @@ export default {
                 method: 'get',
                 params: params
             }).then(res=>{
-                console.log(res.data.data)
+                this.table_loading = false
                 this.tableData = res.data.data
             })
         }

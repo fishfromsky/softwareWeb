@@ -29,15 +29,6 @@ client = OpenAI(
     base_url=settings.LLM_BASE_URL
 )
 
-def kill_process_on_port(port):  # 查找指定端口并杀死相关进程
-    command = f"netstat -ano | findstr :{port}"
-    output = subprocess.check_output(command, shell=True).decode().strip()
-    if output:
-        content = output.split()
-        index = content.index("LISTENING")
-        pid = content[index+1]
-        subprocess.call(["taskkill", "/PID", pid, "/F"])
-
 
 def exponential_search(json_data):
     # 随机选择一个起始点
@@ -111,7 +102,6 @@ def start_vue_project(username, datetime):
         cwd=virtual_vue_path,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        shell=True,
         text=True
     )
     while True:
@@ -128,7 +118,6 @@ def start_vue_project(username, datetime):
         cwd=virtual_vue_path,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        shell=True,
         text=True
     )
     success = False
@@ -155,8 +144,6 @@ def stop_vue_project(process, port, virtual_vue_path):
     json_path = os.path.join(BASE_DIR, "llmserver", "port.json")
 
     modify_port_file_end(json_path, port)
-
-    kill_process_on_port(port)
 
     virtual_vue_path = os.path.dirname(virtual_vue_path)
     shutil.rmtree(virtual_vue_path)
@@ -212,25 +199,24 @@ def main_process(IMAGE_PATH, port, username, datetime):
     if not os.path.exists(user_path):
         os.makedirs(user_path)
 
-    chrome_driver_path = os.path.join(os.path.dirname(BASE_DIR), "chromedriver", "chromedriver.exe")
+    chrome_driver_path = os.path.join(os.path.dirname(BASE_DIR), "chromedriver", "chromedriver")
     # 配置 Selenium 使用 Chrome 浏览器
     options = webdriver.ChromeOptions()
-    options.binary_location = os.path.join(os.path.dirname(BASE_DIR), "chrome", "chrome.exe")
-    options.add_experimental_option("detach", True)  # 让 Chrome 保持打开，不会自动关闭
+    options.binary_location = os.path.join(os.path.dirname(BASE_DIR), "chrome", "chrome")
     options.add_argument("--disable-application-cache")
+    options.add_argument("--no-sandbox")  # 禁用Linux沙箱机制
     options.add_argument(f"--user-data-dir={user_path}")  # 配置独立的用户数据目录
-    options.add_argument("--start-maximized")  # 启动时窗口最大化
     options.add_argument("--disable-blink-features=AutomationControlled")  # 规避检测
     options.add_argument("--headless")  # 无头模式
     options.add_argument("--disable-gpu")  # 禁用 GPU 加速
     options.add_argument("--window-size=2580,1562")  # 设置窗口大小
 
-    # 为每个谷歌驱动器指定不同端口
-    chrome_port_path = os.path.join(BASE_DIR, "llmserver", "chrome_port.json")
-    chrome_port = modify_port_file_start(chrome_port_path)
+    # 设置字体
+    options.add_argument('--font-cache-shared-handle=0')
+    options.add_argument('--lang=zh-CN')
 
     # 启动浏览器
-    driver = webdriver.Chrome(service=Service(chrome_driver_path, port=chrome_port), options=options)
+    driver = webdriver.Chrome(service=Service(chrome_driver_path, port=0), options=options)
 
     driver.get(f"http://localhost:{port}/login")
     take_screenshot("0-0", driver, IMAGE_PATH)
@@ -262,8 +248,6 @@ def main_process(IMAGE_PATH, port, username, datetime):
 
     # 关闭浏览器
     driver.quit()
-
-    modify_port_file_end(chrome_port_path, chrome_port)
 
     shutil.rmtree(user_path)
 
@@ -390,6 +374,7 @@ def generate_word_template(title, user, time, TXT_PATH):
 
     doc_save_path = os.path.join(BASE_DIR, "static", user, time, "template_manual.docx")
     doc.save(doc_save_path)
+    print('Word 文档生成完毕')
 
 
 if __name__ == "__main__":
@@ -408,5 +393,5 @@ if __name__ == "__main__":
     if not os.path.exists(TXT_PATH):
         os.makedirs(TXT_PATH)
 
-    main(username, datetime, IMAGE_PATH)
+    # main(username, datetime, IMAGE_PATH)
     generate_word_template(platform, username, datetime, TXT_PATH)

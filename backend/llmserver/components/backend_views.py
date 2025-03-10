@@ -18,13 +18,13 @@ client = OpenAI(
 )
 
 def get_model_response(user_message):
-    message = [{'role': 'user', 'content': user_message}]
+    message = [{"role": "user", "content": user_message}]
     try:
         completion = client.chat.completions.create(
             model="qwen-plus",
             messages=message
         )
-        return json.loads(completion.model_dump_json())['choices'][0]['message']['content']
+        return json.loads(completion.model_dump_json())["choices"][0]["message"]["content"]
     except Exception as e:
         raise e
 
@@ -43,7 +43,7 @@ def get_response(messages):
 # 保存模型输出内容到txt文件
 def save_to_txt(content, filename):
     try:
-        with open(filename, 'w', encoding='utf-8') as file:
+        with open(filename, "w", encoding="utf-8") as file:
             file.write(content)
         print(f"内容已保存到 {filename}")
     except Exception as e:
@@ -62,7 +62,7 @@ def save_to_word(content, filename):
 # 读取指定路径的 JSON 文件
 def read_json_file(file_path):
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, "r", encoding="utf-8") as file:
             data = json.load(file)
             return data
     except Exception as e:
@@ -98,8 +98,8 @@ def analyze_file(file_path, txt_file_path):
 # 第一次提问：扩展软件信息
 def first_prompt(software_name, programming_language, txt_file_path, final_path):
     messages = [{
-        'role': 'system',
-        'content': 'You are a helpful assistant that expands software descriptions based on input.'
+        "role": "system",
+        "content": "You are a helpful assistant that expands software descriptions based on input."
     }]
     # # 获取编程语言的输入
     # programming_language = input("请输入软件的编程语言：")
@@ -124,12 +124,12 @@ def first_prompt(software_name, programming_language, txt_file_path, final_path)
     【软件的技术特点】
     """
 
-    messages.append({'role': 'user', 'content': user_input})
+    messages.append({"role": "user", "content": user_input})
 
     # 获取模型返回的完整内容
     assistant_output = get_response(messages).choices[0].message.content
 
-    # print(f'第一次提问的输出：\n{assistant_output}')
+    # print(f"第一次提问的输出：\n{assistant_output}")
 
     # 保存到指定txt文件
     save_to_txt(assistant_output, txt_file_path)
@@ -141,8 +141,8 @@ def first_prompt(software_name, programming_language, txt_file_path, final_path)
 # 第二次提问：生成代码框架，包含模块分析
 def second_prompt(programming_language, expanded_description, txt_file_path):
     messages = [{
-        'role': 'system',
-        'content': f'You are a helpful assistant that generates {programming_language} code framework based on software descriptions, and includes detailed descriptions and comments for each module.'
+        "role": "system",
+        "content": f"You are a helpful assistant that generates {programming_language} code framework based on software descriptions, and includes detailed descriptions and comments for each module."
     }]
     user_input = f"根据以下软件描述，生成{programming_language}代码框架，并为每个模块加入详细描述和注释：\n{expanded_description}\n"
     user_input += """
@@ -153,10 +153,10 @@ def second_prompt(programming_language, expanded_description, txt_file_path):
     - 业务部分：包括用户管理、订单处理等复杂业务逻辑模块，每个模块需要有详细的描述。
     - 安全部分：包括数据加密、认证与授权、日志记录等每个部分需要有详细说明。
     """
-    messages.append({'role': 'user', 'content': user_input})
+    messages.append({"role": "user", "content": user_input})
 
     assistant_output = get_response(messages).choices[0].message.content
-    # print(f'第二次提问的输出：\n{assistant_output}')
+    # print(f"第二次提问的输出：\n{assistant_output}")
 
     # 保存到指定txt文件
     save_to_txt(assistant_output, txt_file_path)
@@ -167,11 +167,11 @@ def second_prompt(programming_language, expanded_description, txt_file_path):
 # 修改后的代码生成函数
 def generate_code_with_details(programming_language, layer, code_framework):
     messages = [{
-        'role': 'system',
-        'content': f'You are a helpful assistant that generates {programming_language} code with detailed comments and explanations for each module. Please only return the code and remove any extra explanations or descriptions.'
+        "role": "system",
+        "content": f"You are a helpful assistant that generates {programming_language} code with detailed comments and explanations for each module. Please only return the code and remove any extra explanations or descriptions."
     }]
     user_input = f"理解下面描述中关于{layer}的部分，并为每个模块生成详细注释的{programming_language}代码, 不包含任何额外的描述，且代码内容不应包含其他格式的解释或说明，不少于500行：\n{code_framework}\n"
-    messages.append({'role': 'user', 'content': user_input})
+    messages.append({"role": "user", "content": user_input})
 
     assistant_output = get_response(messages).choices[0].message.content
 
@@ -183,7 +183,7 @@ def generate_code_with_details(programming_language, layer, code_framework):
     # 删除空行，确保代码紧凑
     code_only = "\n".join([line for line in code_only.split("\n") if line.strip() != ""])
 
-    # print(f'{layer}层生成的代码：\n{code_only}')
+    # print(f"{layer}层生成的代码：\n{code_only}")
     return code_only
 
 
@@ -262,8 +262,8 @@ if __name__ == "__main__":
     username = sys.argv[3]
     datetime = sys.argv[4]
 
-    medium_path = os.path.join(BASE_DIR, 'medium', username, datetime)
-    final_path = os.path.join(BASE_DIR, 'static', username, datetime)
+    medium_path = os.path.join(BASE_DIR, "medium", username, datetime)
+    final_path = os.path.join(BASE_DIR, "static", username, datetime)
     if not os.path.exists(medium_path):
         os.makedirs(medium_path)
     if not os.path.exists(final_path):
@@ -278,7 +278,7 @@ if __name__ == "__main__":
     code_framework = second_prompt(language, expanded_description,os.path.join(medium_path, "code_framework.txt"))  # 第二次提问，获得对软著实现的框架性语言，并保存到txt
 
     # 调用函数，传入文件路径
-    file_path = os.path.join(medium_path, 'menu.json')
+    file_path = os.path.join(medium_path, "menu.json")
     json_answer = analyze_file(file_path, os.path.join(medium_path, "json_analysis.txt"))  # 获得对后续数据库代码实现的补充提示词，并保存到txt
 
     # 并发生成代码

@@ -1,7 +1,7 @@
 import os
 
 from PyPDF2 import PdfReader, PdfWriter
-import comtypes.client
+import subprocess
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -79,23 +79,14 @@ def convert_and_control_pdf_pages(word_file, pdf_file, output_pdf_file, max_page
 # 转换Word为PDF
 def word_to_pdf(word_file, pdf_file):
     try:
-        word = comtypes.client.CreateObject('Word.Application')
-        word.Visible = False  # 不显示Word应用程序
-        doc = word.Documents.Open(word_file)
-
-        print('打开成功')
-
-        # 保存为PDF
-        doc.SaveAs(pdf_file, FileFormat=17)  # 17表示PDF格式
-        doc.Close()
-
-        # 退出Word应用
-        word.Quit()
-
-        print(f"成功转换Word文件为PDF，文件路径：{pdf_file}")
+        subprocess.run(
+            ["libreoffice", "--headless", "--convert-to", "pdf", word_file, "--outdir", os.path.dirname(pdf_file)], 
+            check=True
+        )
+        print(f"成功转换 Word 为 PDF: {pdf_file}")
         return True
     except Exception as e:
-        print(f"转换过程中发生错误：{e}")
+        print(f"转换失败: {e}")
         return False
 
 
@@ -105,7 +96,7 @@ def main_pdf(username, time):
         os.makedirs(final_path)
     # 示例：将指定的Word文件转换为PDF并控制页数不超过60页
     word_file = os.path.join(final_path, "merged_code.docx") # 替换为您的Word文件路径
-    pdf_file = os.path.join(final_path, "mid_file.pdf")  # 指定保存PDF的路径
+    pdf_file = os.path.join(final_path, "merged_code.pdf")  # 指定保存PDF的路径
     output_pdf_file = os.path.join(final_path, "ultimate_file.pdf") # 输出PDF文件路径
 
     # 转换并控制PDF页数不超过60页
