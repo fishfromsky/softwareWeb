@@ -17,7 +17,7 @@ client = OpenAI(
 
 MAX_THREADS = 1
 
-WEB_URL = "http://127.0.0.1:8000/static"
+WEB_URL = "http://121.196.229.117:8000/static"
 
 BASE_DIR = base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MEDIUM_PATH = os.path.join(BASE_DIR, "medium")
@@ -84,7 +84,6 @@ def run_another_script_webfront(arg1, arg2, arg3):
     # 使用 subprocess.run 运行另一个 Python 文件并传递参数
     import subprocess
     subprocess.run(["python3", os.path.join(BASE_DIR, "llmserver", "components", "webfront_screenshot.py"), arg1, arg2, arg3])
-    print('运行完毕')
     MAX_THREADS += 1
 
 
