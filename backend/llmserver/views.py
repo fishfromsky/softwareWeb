@@ -4,8 +4,6 @@ from openai import OpenAI
 import os
 import json
 import threading
-from django.db.models.fields import DateTimeField
-from django.db.models.fields.related import ManyToManyField
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.backend.settings")
 from django.conf import settings
 from .models import *
@@ -17,7 +15,9 @@ client = OpenAI(
     base_url=settings.LLM_BASE_URL
 )
 
-WEB_URL = "http://121.196.229.117:8000/static"
+MAX_THREADS = 1
+
+WEB_URL = "http://127.0.0.1:8000/static"
 
 BASE_DIR = base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MEDIUM_PATH = os.path.join(BASE_DIR, "medium")
@@ -80,9 +80,12 @@ def to_dict(self, fields=None, exclude=None):
     return data
 
 def run_another_script_webfront(arg1, arg2, arg3):
+    global MAX_THREADS
     # 使用 subprocess.run 运行另一个 Python 文件并传递参数
     import subprocess
     subprocess.run(["python3", os.path.join(BASE_DIR, "llmserver", "components", "webfront_screenshot.py"), arg1, arg2, arg3])
+    print('运行完毕')
+    MAX_THREADS += 1
 
 
 def run_another_script_backend(arg1, arg2, arg3, arg4):
@@ -90,8 +93,20 @@ def run_another_script_backend(arg1, arg2, arg3, arg4):
     import subprocess
     subprocess.run(["python3", os.path.join(BASE_DIR, "llmserver", "components", "backend_views.py"), arg1, arg2, arg3, arg4])
 
+@require_http_methods(['GET'])
+def check_thread_pool_available(request):
+    response = {'code': 0, 'message': 'success'}
+    if MAX_THREADS > 0:
+        response['status'] = 1
+    else:
+        response['status'] = 0
+    return JsonResponse(response)
+
+
 @require_http_methods(["POST"])
 def startProgram(request):
+    global MAX_THREADS
+    MAX_THREADS -= 1
     response = {"code": 0, "message": "success"}
     data = json.loads(request.body)
     person_id = data.get("id")
@@ -100,7 +115,7 @@ def startProgram(request):
     datetime = data.get("time")
     username = data.get("username")
 
-    code_path = WEB_URL + "/" + username + "/" + datetime + "/merged_code.docx"
+    code_path = WEB_URL + "/" + username + "/" + datetime + "/ultimate_file.pdf"
     word_file = WEB_URL + "/" + username + "/" + datetime + "/template_manual.docx"
     introduce_file = WEB_URL + "/" + username + "/" + datetime + "/expanded_description.txt"
 

@@ -6,6 +6,7 @@ urlpatterns = [
     url('register', views.register),  # 注册
     url('getuserrecord', views.getUserAllRecord),  # 获取用户软著生成记录
     url('deleterecord', views.deleteUserRecord),  # 删除用户软著记录
+    url('getthreadstatus', views.check_thread_pool_available),  # 获取线程池状态
 
     url('getmenu', views.getMenuConfig),   # 获取侧边栏
     url('getname', views.getNameConfig),   # 获取平台名称

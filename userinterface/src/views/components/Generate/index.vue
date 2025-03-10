@@ -60,15 +60,26 @@ methods: {
       this.$message.error('请输入软著名称!')
     }
     else{
-      var dataForm = {
-        'id': Cookies.get('user_id'),
-        'username': Cookies.get('username'),
-        'platform': this.form.name,
-        'language': this.form.language,
-        'time': time
-      }
-      this.$http.post('api/runprogram', dataForm).then(res=>{
-        this.$message.success('运行成功, 请耐心等待')
+      this.$http({
+        url: 'api/getthreadstatus',
+        method: 'get'
+      }).then(res=>{
+        var status = res.data.status
+        if (status == 1){
+          var dataForm = {
+          'id': Cookies.get('user_id'),
+          'username': Cookies.get('username'),
+          'platform': this.form.name,
+          'language': this.form.language,
+          'time': time
+          }
+          this.$http.post('api/runprogram', dataForm).then(res=>{
+            this.$message.success('运行成功, 请耐心等待')
+          })
+        }
+        else{
+          this.$message.error('服务器任务已满，请稍后尝试')
+        }
       })
     }
   },

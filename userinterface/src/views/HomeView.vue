@@ -10,7 +10,7 @@
     </el-header>
     <el-container>
       <el-aside width="200px" style="background-color: #D3DCE6;">
-        <el-menu :default-active="active_index" style="height: 100%;">
+        <el-menu :default-active="active_index.toString()" style="height: 100%;">
           <el-menu-item v-for="(item, idx) in itemList" :index="item.index" :key="idx" @click="handleClick(idx, item.path)">
             <i :class="item.icon"></i>
             <span slot="title">{{ item.name }}</span>
