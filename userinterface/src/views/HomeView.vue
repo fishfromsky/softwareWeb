@@ -43,6 +43,9 @@ export default {
     }
   },
   methods: {
+    clearActiveIndex() {
+      localStorage.removeItem('active_index');
+    },
     handleClick(idx, pagepath){
       if (this.active_index != idx){
         this.$router.push({path: pagepath})
@@ -59,7 +62,11 @@ export default {
   },
   mounted() {
     this.username = Cookies.get('username')
+    window.addEventListener('beforeunload', this.clearActiveIndex);
   },
+  beforeDestroy() {
+    window.removeEventListener('beforeunload', this.clearActiveIndex);
+  }
 }
 </script>
 <style>
