@@ -84,6 +84,33 @@ def copy_file(file_path1, file_path2):
     shutil.copytree(file_path1, file_path2)
 
 
+def kill_process_by_port(port):  # 强制终止进程 (限于Linux系统)
+    try:
+        # 查找占用指定端口的进程ID
+        command = f"lsof -i :{port} -t"
+        pid = subprocess.check_output(command, shell=True)
+        pid = int(pid.strip())
+
+        # 尝试终止进程
+        os.kill(pid, 15)  # 先尝试发送SIGTERM信号请求正常终止
+        print(f"已向PID {pid}发送终止信号，等待进程正常结束...")
+
+        # 确认进程是否已经结束，如果没有，则强制终止
+        try:
+            os.kill(pid, 0)  # 这个操作会抛出异常如果进程不存在
+            os.kill(pid, 9)  # 如果进程还在运行，发送SIGKILL信号强制结束
+            print(f"已强制终止PID {pid}")
+        except OSError:
+            print(f"PID {pid} 已正常结束")
+
+    except subprocess.CalledProcessError:
+        print(f"找不到端口号为 {port} 的进程")
+    except ValueError:
+        print("解析PID时出现错误")
+    except OSError as e:
+        print(f"无法终止进程: {e}")
+
+
 # 启动 Vue 项目
 def start_vue_project(username, datetime):
 
@@ -145,6 +172,8 @@ def stop_vue_project(process, port, virtual_vue_path):
     json_path = os.path.join(BASE_DIR, "llmserver", "port.json")
 
     modify_port_file_end(json_path, port)
+
+    kill_process_by_port(port)
 
     virtual_vue_path = os.path.dirname(virtual_vue_path)
     shutil.rmtree(virtual_vue_path)
