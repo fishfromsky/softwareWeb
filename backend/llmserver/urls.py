@@ -8,6 +8,10 @@ urlpatterns = [
     url('deleterecord', views.deleteUserRecord),  # 删除用户软著记录
     url('getthreadstatus', views.check_thread_pool_available),  # 获取线程池状态
 
+    url('pdfdownload', views.pdfDownload),  # 获取PDF文件
+    url('txtdownload', views.txtDownload),  # 获取txt文件
+    url('worddownload', views.wordDownload),  # 获取word文档
+
     url('getmenu', views.getMenuConfig),   # 获取侧边栏
     url('getname', views.getNameConfig),   # 获取平台名称
     url('getpageinfo', views.getPageInfo),   # 获取页面详细代码信息

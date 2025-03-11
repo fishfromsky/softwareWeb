@@ -1,5 +1,5 @@
 from django.views.decorators.http import require_http_methods
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse
 from openai import OpenAI
 import os
 import json
@@ -19,7 +19,7 @@ MAX_THREADS = 1
 
 WEB_URL = "http://121.196.229.117:8000/static"
 
-BASE_DIR = base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MEDIUM_PATH = os.path.join(BASE_DIR, "medium")
 
 from django.db.models.fields import DateTimeField
@@ -92,13 +92,13 @@ def run_another_script_backend(arg1, arg2, arg3, arg4):
     import subprocess
     subprocess.run(["python3", os.path.join(BASE_DIR, "llmserver", "components", "backend_views.py"), arg1, arg2, arg3, arg4])
 
-@require_http_methods(['GET'])
+@require_http_methods(["GET"])
 def check_thread_pool_available(request):
-    response = {'code': 0, 'message': 'success'}
+    response = {"code": 0, "message": "success"}
     if MAX_THREADS > 0:
-        response['status'] = 1
+        response["status"] = 1
     else:
-        response['status'] = 0
+        response["status"] = 0
     return JsonResponse(response)
 
 
@@ -210,6 +210,41 @@ def deleteUserRecord(request):
     delete_directory(static_path)
     record.delete()
     return JsonResponse(response)
+
+
+@require_http_methods(["GET"])
+def pdfDownload(request):
+    user_id = request.GET.get("user_id")
+    time = request.GET.get("time")
+    username = UserProfile.objects.get(id=user_id).username
+    static_file_path = os.path.join(BASE_DIR, "static", username, time, "ultimate_file.pdf")
+    file = open(static_file_path, "rb")
+    response = FileResponse(file)
+    response["Content-Disposition"] = f"attachment; filename='{username}'+'{time}'+'.pdf"
+    return response
+
+
+@require_http_methods(['GET'])
+def txtDownload(request):
+    user_id = request.GET.get("user_id")
+    time = request.GET.get("time")
+    username = UserProfile.objects.get(id=user_id).username
+    static_file_path = os.path.join(BASE_DIR, "static", username, time, "expanded_description.txt")
+    file = open(static_file_path, "rb")
+    response = FileResponse(file)
+    response["Content-Disposition"] = f"attachment; filename='{username}'+'{time}'+'.txt"
+    return response
+
+@require_http_methods(['GET'])
+def wordDownload(request):
+    user_id = request.GET.get("user_id")
+    time = request.GET.get("time")
+    username = UserProfile.objects.get(id=user_id).username
+    static_file_path = os.path.join(BASE_DIR, "static", username, time, "template_manual.docx")
+    file = open(static_file_path, "rb")
+    response = FileResponse(file)
+    response["Content-Disposition"] = f"attachment; filename='{username}'+'{time}'+'.docx"
+    return response
 
 
 @require_http_methods(["GET"])

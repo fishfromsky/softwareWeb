@@ -16,6 +16,10 @@ backend/screenshot/
 
 backend/Introduction/
 
+backend/virtual_vue_project/
+
+backend/chrome_user_data/
+
 backend/static/
 
 chromedriver/

@@ -6,19 +6,19 @@
             <el-table-column prop="language" label="后端代码语言"></el-table-column>
             <el-table-column label="说明文档下载">
                 <template slot-scope="scope">
-                    <el-button v-if="scope.row.introduce_status" @click="handleDownload(scope.row.introduce_download)" type="primary" size="mini">下载</el-button>
+                    <el-button v-if="scope.row.introduce_status" @click="handleDownloadTXT(scope.row)" type="primary" size="mini">下载</el-button>
                     <div v-else>正在生成中</div>
                 </template>
             </el-table-column>
             <el-table-column label="操作手册下载">
                 <template slot-scope="scope">
-                    <el-button v-if="scope.row.pdf_status" @click="handleDownload(scope.row.pdf_download)" type="primary" size="mini">下载</el-button>
+                    <el-button v-if="scope.row.pdf_status" @click="handleDownloadWord(scope.row)" type="primary" size="mini">下载</el-button>
                     <div v-else>正在生成中</div>
                 </template>
             </el-table-column>
             <el-table-column label="代码文档下载">
                 <template slot-scope="scope">
-                    <el-button v-if="scope.row.code_status" @click="handleDownload(scope.row.code_download)" type="primary" size="mini">下载</el-button>
+                    <el-button v-if="scope.row.code_status" @click="handleDownLoadPDF(scope.row)" type="primary" size="mini">下载</el-button>
                     <div v-else>正在生成中</div>
                 </template>
             </el-table-column>
@@ -46,8 +46,74 @@ export default {
         };
     },
     methods: {
-        handleDownload(url) {
-            window.open(url, '_blank');
+        handleDownLoadPDF(data){
+            var params = {
+                'time': data.time,
+                'user_id': data.user
+            }
+            this.$http({
+                url: 'api/pdfdownload',
+                method: 'get',
+                responseType: 'blob',
+                params: params
+            }).then(res=>{
+                const url = window.URL.createObjectURL(new Blob([res.data]))
+                const link = document.createElement('a');
+                
+                link.href = url;
+                link.setAttribute('download', 'code.pdf'); 
+                document.body.appendChild(link);
+                link.click();
+
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(link);
+            })
+        },
+        handleDownloadTXT(data){
+            var params = {
+                'time': data.time,
+                'user_id': data.user
+            }
+            this.$http({
+                url: 'api/txtdownload',
+                method: 'get',
+                responseType: 'blob',
+                params: params
+            }).then(res=>{
+                const url = window.URL.createObjectURL(new Blob([res.data]))
+                const link = document.createElement('a');
+                
+                link.href = url;
+                link.setAttribute('download', 'description.txt'); 
+                document.body.appendChild(link);
+                link.click();
+
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(link);
+            })
+        },
+        handleDownloadWord(data) {
+            var params = {
+                'time': data.time,
+                'user_id': data.user
+            }
+            this.$http({
+                url: 'api/worddownload',
+                method: 'get',
+                responseType: 'blob',
+                params: params
+            }).then(res=>{
+                const url = window.URL.createObjectURL(new Blob([res.data]))
+                const link = document.createElement('a');
+                
+                link.href = url;
+                link.setAttribute('download', 'introduction.docx'); 
+                document.body.appendChild(link);
+                link.click();
+
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(link);
+            })
         },
         handleDelete(index, row) {
             MessageBox.confirm('此操作将永久删除该记录, 是否继续?', '提示', {
