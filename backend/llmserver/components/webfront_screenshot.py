@@ -140,6 +140,7 @@ def start_vue_project(username, datetime):
 # 关闭 Vue 项目
 def stop_vue_project(process, port, virtual_vue_path):
     process.terminate()
+    process.kill()
 
     json_path = os.path.join(BASE_DIR, "llmserver", "port.json")
 
