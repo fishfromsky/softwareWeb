@@ -6,6 +6,9 @@ import re
 import concurrent.futures
 import sys
 from pdf_views import main_pdf
+from docx.shared import Pt
+from docx.oxml.ns import qn
+import time
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
@@ -236,18 +239,57 @@ def generate_all_layers_concurrently(programming_language, code_framework, json_
 
 
 # 合并多个Word文档为一个
-def merge_word_documents(file_paths, output_path):
+def merge_word_documents(file_paths, output_path, software_name):
+    # 确保输出目录存在
+    output_dir = os.path.dirname(output_path)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
     merged_doc = Document()
 
+    # 添加页眉
+    section = merged_doc.sections[0]
+    header = section.header
+    header_paragraph = header.paragraphs[0]
+    header_paragraph.text = software_name
+    header_paragraph.alignment = 1  # 居中
+
+    run = header_paragraph.runs[0]
+    run.font.name = "SimSun"
+    run._element.rPr.rFonts.set(qn('w:eastAsia'), "宋体")
+    run.font.size = Pt(10.5)
+
+    # 遍历文件合并内容
     for file_path in file_paths:
         try:
             doc = Document(file_path)
-            for element in doc.element.body:
-                merged_doc.element.body.append(element)
+            for para in doc.paragraphs:
+                text = para.text
+
+                # 依次去除代码块标识符
+                text = text.replace("```\n", "").replace("```", "")
+
+                # 依次去除各种编程语言名称（大小写都考虑）
+                languages = [
+                    "python", "Python", "java", "Java", "javascript", "Javascript", "JavaScript"
+                ]
+
+                for lang in languages:
+                    text = text.replace(lang, "")
+
+                new_para = merged_doc.add_paragraph(text)
+                for run in new_para.runs:
+                    run.font.name = "SimSun"
+                    run._element.rPr.rFonts.set(qn('w:eastAsia'), "宋体")
+                    run.font.size = Pt(10.5)
+
+            merged_doc.add_page_break()  # 添加分页符
             print(f"成功合并文档: {file_path}")
         except Exception as e:
             print(f"合并文档时出错: {file_path}, 错误: {e}")
 
+    # 等待2秒并保存
+    time.sleep(2)
     try:
         merged_doc.save(output_path)
         print(f"所有文档已合并并保存到: {output_path}")
@@ -293,5 +335,5 @@ if __name__ == "__main__":
 
     # 合并所有代码文件
     merged_file_path = os.path.join(output_path_2, "merged_code.docx")
-    merge_word_documents(file_paths, merged_file_path)
+    merge_word_documents(file_paths, merged_file_path, platform)
     main_pdf(username, datetime)

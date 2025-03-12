@@ -2,6 +2,10 @@ import os
 
 from PyPDF2 import PdfReader, PdfWriter
 import subprocess
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+import io
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -33,7 +37,7 @@ def extract_and_save_pdf(pdf_file, output_pdf_file, max_pages=60):
                 for i in range(30):
                     writer.add_page(reader.pages[i])
                 # 提取后30页
-                for i in range(total_pages - 30, total_pages):
+                for i in range(total_pages - 30, total_pages-1):
                     writer.add_page(reader.pages[i])
 
             else:
@@ -49,6 +53,41 @@ def extract_and_save_pdf(pdf_file, output_pdf_file, max_pages=60):
 
     except Exception as e:
         print(f"提取PDF页数并保存时出错：{e}")
+
+def add_page_numbers(pdf_file):
+    try:
+        reader = PdfReader(pdf_file)
+        writer = PdfWriter()
+        total_pages = len(reader.pages)
+
+        for i in range(total_pages):
+            packet = io.BytesIO()
+            can = canvas.Canvas(packet, pagesize=letter)
+            page_width, page_height = letter
+
+            # 添加页码文本
+            page_num_text = f"{i + 1}"
+            can.setFont("Helvetica", 10)
+            can.drawString(page_width / 2 - 20, 30, page_num_text)  # 居中页脚
+            can.save()
+
+            # 读取页脚 PDF
+            packet.seek(0)
+            new_pdf = PdfReader(packet)
+
+            # 获取当前页并合并页脚
+            page = reader.pages[i]
+            page.merge_page(new_pdf.pages[0])
+            writer.add_page(page)
+
+        # 覆盖原 PDF 文件
+        with open(pdf_file, "wb") as output_file:
+            writer.write(output_file)
+
+        print(f"已为 PDF 添加页码，并覆盖原文件：{pdf_file}")
+
+    except Exception as e:
+        print(f"添加页码时发生错误：{e}")
 
 
 # 主程序
@@ -73,14 +112,15 @@ def convert_and_control_pdf_pages(word_file, pdf_file, output_pdf_file, max_page
         with open(pdf_file, 'rb') as file:
             with open(output_pdf_file, 'wb') as output_file:
                 output_file.write(file.read())
-        print(f"PDF文件已保存：{output_pdf_file}")
+
+    add_page_numbers(output_pdf_file)
 
 
 # 转换Word为PDF
 def word_to_pdf(word_file, pdf_file):
     try:
         subprocess.run(
-            ["libreoffice", "--headless", "--convert-to", "pdf", word_file, "--outdir", os.path.dirname(pdf_file)], 
+            ["libreoffice", "--headless", "--convert-to", "pdf", word_file, "--outdir", os.path.dirname(pdf_file)],
             check=True
         )
         print(f"成功转换 Word 为 PDF: {pdf_file}")
