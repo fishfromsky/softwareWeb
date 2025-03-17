@@ -457,5 +457,5 @@ if __name__ == "__main__":
     if not os.path.exists(TXT_PATH):
         os.makedirs(TXT_PATH)
 
-    # main(username, datetime, IMAGE_PATH)
+    main(username, datetime, IMAGE_PATH)
     generate_word_template(platform, username, datetime, TXT_PATH)
