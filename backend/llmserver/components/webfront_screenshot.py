@@ -6,12 +6,15 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from docx import Document
+from tenacity import retry, stop_after_attempt, wait_exponential
+from openai import OpenAI
 from docx.shared import Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-from openai import OpenAI
 import json
 import sys
 import shutil
+from utils import add_multi_level, add_manual, add_pager_header
+import threading
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
@@ -179,32 +182,39 @@ def stop_vue_project(process, port, virtual_vue_path):
     shutil.rmtree(virtual_vue_path)
     print("Vue 项目已关闭。")
 
+
+@retry(stop=stop_after_attempt(10), wait=wait_exponential(multiplier=1, min=2, max=20))
 def generate_config(PLATFORM, username, datetime):
-    with open(os.path.join(BASE_DIR, "medium", username, datetime, "menu.json"), "r", encoding="utf-8") as f:
-        menu = json.load(f)
-        f.close()
-    json_str = json.dumps(menu, ensure_ascii=False)
-    MESSAGE = [{"role": "system", "content": "You are a helpful programmer and product manager"}]
-    question = f"""
-    现在有一个名为{PLATFORM}的后台管理系统,其侧边栏为{json_str},请为其设计如下的一些配置信息:
-    1.开发硬件环境,包括处理器,内存,硬盘,显卡等配置信息.
-    2.运行硬件环境,包括处理器,内存,硬盘,带宽等配置信息.
-    3.开发目的,说明文字不少于300字.
-    4.功能描述,说明文字不少于600字.
-    5.以Object形式返回，返回内容开始以"{{"开头，不需要额外任何解释说明.
-    6.Object的Key也需要使用双引号引起来
-    6.语言为中文
-    7.配置信息为纯文字说明,不需要换行
-    """
-    query = {"role": "user", "content": question}
-    MESSAGE.append(query)
-    completion = client.chat.completions.create(
-        model="qwen-coder-plus-latest",
-        messages=MESSAGE
-    )
-    data_dict = json.loads(completion.model_dump_json())
-    content = data_dict["choices"][0]["message"]["content"]
-    return content
+    try:
+        with open(os.path.join(BASE_DIR, "medium", username, datetime, "menu.json"), "r", encoding="utf-8") as f:
+            menu = json.load(f)
+            f.close()
+        json_str = json.dumps(menu, ensure_ascii=False)
+        MESSAGE = [{"role": "system", "content": "You are a helpful programmer and product manager"}]
+        question = f"""
+        现在有一个名为{PLATFORM}的后台管理系统,其侧边栏为{json_str},请为其设计如下的一些配置信息:
+        1."开发硬件环境"：包括处理器,内存,硬盘,显卡等配置信息,不同配置信息之间通过分号标点隔开,以句号结束.
+        2."运行硬件环境"：包括处理器,内存,硬盘,带宽等配置信息,不同配置信息之间通过分号标点隔开,以句号结束.
+        3."开发目的"：确保生成”开发目的"的文字信息不少于300字.
+        4."功能描述"：对侧边栏每个父目录及父目录下每个子目录进行功能描述,一句话概括,不需要展开具体描述.
+        5."功能描述"内容以嵌套Object形式返回,第一层的每一个Key是父目录名称,Value是另一个子Object,它的每一个Key是子目录名称,value是对应的功能描述.
+        6."功能描述"的Object中的每一个子Object的每一个键值对之间必须以","分隔,禁止以分号分隔.
+        7.Object的Key也需要使用双引号引起来.
+        8.生成的相关配置信息为纯文字说明,不需要换行.
+        9.以Object形式返回，返回内容开始以"{{"开头,不需要额外任何解释说明.
+        """
+        query = {"role": "user", "content": question}
+        MESSAGE.append(query)
+        completion = client.chat.completions.create(
+            model="qwen-coder-plus-latest",
+            messages=MESSAGE
+        )
+        data_dict = json.loads(completion.model_dump_json())
+        content = data_dict["choices"][0]["message"]["content"]
+        content = json.loads(content, strict=False)
+        return content
+    except Exception as e:
+        raise e
 
 
 def take_screenshot(index, driver, IMAGE_PATH):
@@ -344,7 +354,7 @@ def generate_word_template(title, user, time, TXT_PATH):
         },
         {
             "name": "功能描述",
-            "content": ""
+            "content": {}
         }
     ]
 
@@ -354,7 +364,6 @@ def generate_word_template(title, user, time, TXT_PATH):
     }
 
     config_content = generate_config(title, user, time)
-    config_content = json.loads(config_content, strict=False)
 
     for i, key in enumerate(config_content.keys()):
         if i < 2:
@@ -369,6 +378,7 @@ def generate_word_template(title, user, time, TXT_PATH):
         if "{{ title }}" in paragraph.text:
             paragraph.text = paragraph.text.replace("{{ title }}", main_info["title"])
 
+    # 作者信息写入表格
     table = doc.tables[0]
     for i, row_data in enumerate(main_info["table"]):
         table.cell(i + 1, 0).text = row_data["version"]
@@ -376,6 +386,7 @@ def generate_word_template(title, user, time, TXT_PATH):
         table.cell(i + 1, 2).text = row_data["name"]
         table.cell(i + 1, 3).text = row_data["info"]
 
+    # 平台配置信息
     for section in config:
         doc.add_page_break()
         doc.add_heading(section["name"], level=1)
@@ -384,7 +395,11 @@ def generate_word_template(title, user, time, TXT_PATH):
                 doc.add_heading(subsection["name"], level=2)
                 doc.add_paragraph(subsection["content"])
         else:
-            doc.add_paragraph(section["content"])
+            if type(section["content"]) == str:
+                doc.add_paragraph(section["content"])
+            else:
+                # 添加带序号的段落
+                doc = add_multi_level(doc, section["content"])
 
     for file in os.listdir(TXT_PATH):
         filename = os.path.join(TXT_PATH, file)
@@ -393,14 +408,33 @@ def generate_word_template(title, user, time, TXT_PATH):
         context["image"] = image
         main_content["subsection"].append(context)
 
+    thread_pool = []   # 多线程请求，节约时间
+    content_dict = {}
+    image_dict = {}
+    title_dict = {}
     doc.add_page_break()
     doc.add_heading(main_content["title"], level=1)
-    for section in main_content["subsection"]:
-        doc.add_heading(section["name"], level=2)
+    image_number = len(main_content["subsection"])
+    for i, section in enumerate(main_content["subsection"]):
+        image_dict[str(i)] = section["image"]
+        title_dict[str(i)] = section["name"]
+        thread = threading.Thread(target=add_manual, args=(section, platform, i, content_dict))
+        thread_pool.append(thread)
+
+    for thr in thread_pool:
+        thr.start()
+
+    for thr in thread_pool:
+        thr.join()
+
+    for key in range(image_number):
+        doc.add_heading(title_dict[str(key)], level=2)
         paragraph = doc.add_paragraph()
         paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-        paragraph.add_run().add_picture(section["image"], width=Inches(5.5))
-        doc.add_paragraph(section["content"])
+        paragraph.add_run().add_picture(image_dict[str(key)], width=Inches(5.5))
+        doc.add_paragraph(content_dict[str(key)])
+
+    add_pager_header(doc, platform)
 
     doc_save_path = os.path.join(BASE_DIR, "static", user, time, "template_manual.docx")
     doc.save(doc_save_path)
@@ -423,5 +457,5 @@ if __name__ == "__main__":
     if not os.path.exists(TXT_PATH):
         os.makedirs(TXT_PATH)
 
-    main(username, datetime, IMAGE_PATH)
+    # main(username, datetime, IMAGE_PATH)
     generate_word_template(platform, username, datetime, TXT_PATH)

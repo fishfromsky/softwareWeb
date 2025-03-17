@@ -150,6 +150,7 @@ def second_prompt(programming_language, expanded_description, txt_file_path):
     user_input = f"根据以下软件描述，生成{programming_language}代码框架，并为每个模块加入详细描述和注释：\n{expanded_description}\n"
     user_input += """
     并请详细描述代码框架的各个部分：
+    - 前端部分：包括用户界面设计、交互逻辑、状态管理、API调用等，每个模块需要有详细的注释和描述。
     - 后端部分：包括用户认证模块、数据存储模块、错误处理模块等，每个模块需要有详细的注释和描述。
     - 数据库部分：包括多个数据库表设计、存储过程、视图等，每个部分需要详细描述。
     - API部分：设计多个RESTful API接口，并加入权限控制、认证、限流等功能。
@@ -193,6 +194,7 @@ def generate_code_with_details(programming_language, layer, code_framework):
 # 细化每个模块的代码生成，修改生成“用户表设计”模块的部分
 def generate_submodules_for_layer(programming_language, layer_name, code_framework, json_answer=None):
     submodules = {
+        "前端": ["页面布局", "组件开发", "状态管理", "API调用"],
         "后端": ["用户认证模块", "数据存储模块", "错误处理模块", "日志记录模块"],
         "数据库": ["用户表设计", "存储过程", "视图", "索引优化"],
         "API": ["用户API接口", "订单API接口", "认证接口", "限流接口"],
@@ -217,7 +219,7 @@ def generate_submodules_for_layer(programming_language, layer_name, code_framewo
 
 # 并发生成所有层代码
 def generate_all_layers_concurrently(programming_language, code_framework, json_answer=None):
-    layer_names = ["后端", "数据库", "API", "业务", "安全"]
+    layer_names = ["前端", "后端", "数据库", "API", "业务", "安全"]
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         future_to_layer = {
