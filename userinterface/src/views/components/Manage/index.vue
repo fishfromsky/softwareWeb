@@ -1,6 +1,6 @@
 <template>
     <div>
-        <el-table :data="tableData" style="width: 100%" v_loading=""table_loading>
+        <el-table :data="tableData" style="width: 100%" v_loading="table_loading">
             <el-table-column prop="name" label="软著名称" ></el-table-column>
             <el-table-column prop="time" label="创建时间"></el-table-column>
             <el-table-column prop="language" label="后端代码语言"></el-table-column>

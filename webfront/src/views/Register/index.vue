@@ -1,7 +1,7 @@
 <template>
-    <el-card v-loading="card_loading" class="main">
+   
         <component v-if="dynamicComp" :is="dynamicComp"/>
-    </el-card>
+   
 </template>
 
 <script>
@@ -41,13 +41,3 @@ export default {
 }
 </script>
 
-<style scoped>
-.main {
-    width: 20%;
-    background-color: #fff;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-</style>

@@ -1,7 +1,7 @@
 <template>
-  <el-card class="login" v-loading="card_loading">
+
     <component v-if="dynamicComp" :is="dynamicComp"/>
-  </el-card>
+ 
 </template>
 
 <script>
@@ -16,9 +16,16 @@ export default {
   },
   methods: {
     getPageCode(){
+      // 构建 colors 字符串
+      let colorStr = ''
+      if (this.$store.state.colors && this.$store.state.colors.length > 0) {
+        colorStr = this.$store.state.colors.join(',')
+      }
+
       var params = {
         'username': this.$store.state.username,
-        'datetime': this.$store.state.datetime
+        'datetime': this.$store.state.datetime,
+        'colors': colorStr  // 添加 colors 参数
       }
       this.$http({
         url: 'api/getpagemain',
@@ -40,12 +47,3 @@ export default {
 }
 </script>
 
-<style scoped>
-.login {
-  width: 20%;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-</style>

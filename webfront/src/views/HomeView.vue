@@ -8,6 +8,7 @@
 <script>
 import NavBar from '@/views/NavBar/index.vue'
 import Info from '@/views/Info/index.vue'
+import * as echarts from 'echarts';
 export default {
   name: 'HomeView',
   components: {
@@ -25,27 +26,34 @@ export default {
     }
   },
   methods: {
-    handleMenuChange(index){
-      if (index != this.current_index){
-        this.current_index = index
-        this.card_loading = true
-        this.$http({
-          url: 'api/getpageinfo',
-          method: 'get',
-          params: {
-            'index': index,
-            'username': this.$store.state.username,
-            'datetime': this.$store.state.datetime
-          }
-        }).then(res=>{
-          var content = res.data.content
-          var replacedString = content.replace(/<\/script>/g, '<\\/script>')
-          this.page_code = replacedString
-          this.card_loading = false
-          window.dispatchEvent(new Event('data-loaded_'+index))
-        })
+    handleMenuChange(index) {
+  if (index !== this.current_index) {
+    this.current_index = index
+    this.card_loading = true
+
+    let colorStr = ''
+    if (this.$store.state.colors && this.$store.state.colors.length > 0) {
+      colorStr = this.$store.state.colors.join(',')
+    }
+
+    this.$http({
+      url: 'api/getpageinfo',
+      method: 'get',
+      params: {
+        index: index,
+        username: this.$store.state.username,
+        datetime: this.$store.state.datetime,
+        colors: colorStr ,
       }
-    },
+    }).then(res => {
+      const content = res.data.content
+      const replacedString = content.replace(/<\/script>/g, '<\\/script>')
+      this.page_code = replacedString
+      this.card_loading = false
+      window.dispatchEvent(new Event('data-loaded_' + index))
+    })
+  }
+},
     getMenu(){
       var params = {
         'username': this.$store.state.username,

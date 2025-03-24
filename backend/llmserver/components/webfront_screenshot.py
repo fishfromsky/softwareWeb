@@ -13,6 +13,7 @@ from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 import json
 import sys
 import shutil
+import re
 from utils import add_multi_level, add_manual, add_pager_header
 import threading
 
@@ -43,17 +44,22 @@ def exponential_search(json_data):
     return -1
 
 
-def write_env_file(path):
+def write_env_file(path, username, datetime, colors):
     env_file_path = os.path.join(path, "user.json")
+
+    if isinstance(colors, str):
+        colors_list = colors.split(',')
+    else:
+        colors_list = colors
 
     user_dict = {
         "username": username,
-        "datetime": datetime
+        "datetime": datetime,
+        "colors": colors_list
     }
 
-    with open(env_file_path, "w") as json_file:
-        json.dump(user_dict, json_file)
-        json_file.close()
+    with open(env_file_path, "w", encoding="utf-8") as json_file:
+        json.dump(user_dict, json_file, ensure_ascii=False, indent=2)
 
 
 def modify_port_file_start(path):  # 将对应端口改为True
@@ -223,15 +229,80 @@ def take_screenshot(index, driver, IMAGE_PATH):
         window.addEventListener("data-loaded_{index}", () => {{
             window.dataLoaded = true;
         }});
-        """
+    """
     driver.execute_script(script)
     wait = WebDriverWait(driver, 500)
     wait.until(lambda d: d.execute_script("return window.dataLoaded;"))
-    time.sleep(2)
+    time.sleep(5)
 
-    screenshot_path = os.path.join(IMAGE_PATH, index+".png")
-    driver.save_screenshot(screenshot_path)
-    print(f"截图已保存为 {screenshot_path}")
+    colors_data = driver.execute_script("return window.myColors || null;")
+    username_data = driver.execute_script("return window.userName || null;")
+
+    try:
+        # 先保存主页面截图
+        screenshot_path = os.path.join(IMAGE_PATH, f"{index}.png")
+        driver.save_screenshot(screenshot_path)
+        print(f"截图已保存为 {screenshot_path}")
+
+        # 查找所有新增按钮
+        add_buttons = driver.find_elements(By.CLASS_NAME, "add")
+        print(f"找到 {len(add_buttons)} 个新增按钮")
+
+        # 遍历每个新增按钮
+        for btn_index, add_button in enumerate(add_buttons, 1):
+            try:
+                # 检查按钮是否可见和可点击
+                if not add_button.is_displayed() or not add_button.is_enabled():
+                    print(f"[{index}] 按钮 {btn_index} 不可见或不可点击，跳过")
+                    continue
+
+                # 滚动到按钮位置
+                driver.execute_script("arguments[0].scrollIntoView(true);", add_button)
+                time.sleep(1)
+
+                # 使用 JavaScript 点击按钮
+                driver.execute_script("arguments[0].click();", add_button)
+                print(f"[{index}] 点击新增按钮 {btn_index}")
+                time.sleep(1)
+
+                try:
+                    # 等待对话框出现
+                    dialog = WebDriverWait(driver, 5).until(
+                        EC.presence_of_element_located((By.CLASS_NAME, "el-dialog"))
+                    )
+
+                    if dialog.is_displayed():
+                        # 保存对话框截图
+                        dialog_screenshot_path = os.path.join(IMAGE_PATH, f"{index}-{btn_index}.png")
+                        driver.save_screenshot(dialog_screenshot_path)
+                        print(f"[{index}] 对话框截图已保存")
+
+                        # 查找并点击取消按钮
+                        cancel_button = dialog.find_element(By.CLASS_NAME, "cancel")
+                        if cancel_button.is_displayed() and cancel_button.is_enabled():
+                            driver.execute_script("arguments[0].click();", cancel_button)
+                            print(f"[{index}] 关闭对话框")
+                            time.sleep(1)
+                    else:
+                        print(f"[{index}] 对话框未显示")
+
+                except Exception as e:
+                    print(f"[{index}] 等待对话框超时或处理对话框时出错:")
+                    print(f"  - 错误类型: {type(e).__name__}")
+                    print(f"  - 错误信息: {str(e)}")
+                    # 继续处理下一个按钮
+                    continue
+
+            except Exception as e:
+                print(f"[{index}] 处理按钮 {btn_index} 时出错:")
+                print(f"  - 错误类型: {type(e).__name__}")
+                print(f"  - 错误信息: {str(e)}")
+                continue
+
+    except Exception as e:
+        print(f"[{index}] 截图过程出错:")
+        print(f"  - 错误类型: {type(e).__name__}")
+        print(f"  - 错误信息: {str(e)}")
 
 
 def main_process(IMAGE_PATH, port, username, datetime):
@@ -292,46 +363,91 @@ def main_process(IMAGE_PATH, port, username, datetime):
     shutil.rmtree(user_path)
 
 # 主函数
-def main(username, datetime, IMAGE_PATH):
+def main(username, datetime, IMAGE_PATH, colors):
     # 启动 Vue 项目
-    vue_process, port, virtual_vue_path = start_vue_project(username, datetime)
-    # try:
-        # 截图
+    vue_process, port, virtual_vue_path = start_vue_project(username, datetime, colors)
+    # 截图
     main_process(IMAGE_PATH, port, username, datetime)
-    # finally:
-    #     # 关闭 Vue 项目
+    # 关闭 Vue 项目
     stop_vue_project(vue_process, port, virtual_vue_path)
 
 
 def read_txt_file(filename):
+    """读取txt文件内容"""
     context = {}
     line_data = []
     flag = False
-    index = 0
+    index_local = 0
     with open(filename, "r", encoding="utf-8") as fr:
         lines = fr.readlines()
         for line in lines:
-            if line.__contains__("*****"):
+            if "*****" in line:
                 flag = True
                 continue
             if flag:
-                if index == 0:
-                    context["name"] = line.replace("\n", "")+"页面"
-                    index += 1
+                if index_local == 0:
+                    # 使用正则表达式清理文本
+                    cleaned_line = re.sub(r'[^\w\u4e00-\u9fff]+', '', line)
+                    context["name"] = cleaned_line + "页面"
+                    index_local += 1
                 else:
                     line_data.append(line)
+    # 合并所有内容行
+    content = "".join(line_data)
 
-    content = "".join(line_data).replace("\n\n", "\n")
+    # 使用正则表达式清理文本
+    # 移除所有特殊字符，但保留中文、英文、数字、基本标点
+    content = re.sub(r'[*{}\\/<>|]', '', content)
+
+    # 处理多余的空白和换行
+    content = re.sub(r'\n\s*\n', '\n', content)
+    content = content.strip()
+
     context["content"] = content
     return context
 
 
 def get_image_info(file):
     index = file.split(".")[0]
-    for file in os.listdir(IMAGE_PATH):
-        if file.split(".")[0] == index:
-            return os.path.join(IMAGE_PATH, file)
+    try:
+        image_files = os.listdir(IMAGE_PATH)
+        for file_name in image_files:
+            current_index = file_name.split(".")[0]
+            if current_index == index:
+                image_path = os.path.join(IMAGE_PATH, file_name)
+                if os.path.exists(image_path):
+                    return image_path
+                else:
+                    print(f"文件路径存在问题: {image_path}")
 
+        print(f"警告: 未找到图片文件 {index}.*")
+        return None
+    except Exception as e:
+        print(f"查找图片时出错: {str(e)}")
+        return None
+
+
+def get_sub_images(file):
+    base_index = file.split(".")[0]  # 获取基础索引，如 "2-1"
+    sub_images = []
+
+    try:
+        image_files = os.listdir(IMAGE_PATH)
+
+        for image_file in image_files:
+            if image_file.startswith(f"{base_index}-"):  # 匹配前缀
+                image_path = os.path.join(IMAGE_PATH, image_file)
+                if os.path.exists(image_path):
+                    sub_images.append(image_path)
+
+        if not sub_images:
+            print(f"未找到 {base_index}-* 的子图片")
+
+        return sorted(sub_images)  # 按文件名排序返回
+
+    except Exception as e:
+        print(f"查找子图片时出错: {str(e)}")
+        return []
 
 def generate_word_template(title, user, time, TXT_PATH):
     doc = Document(os.path.join(BASE_DIR, "medium", "template.docx"))
@@ -401,12 +517,24 @@ def generate_word_template(title, user, time, TXT_PATH):
                 # 添加带序号的段落
                 doc = add_multi_level(doc, section["content"])
 
-    for file in os.listdir(TXT_PATH):
-        filename = os.path.join(TXT_PATH, file)
-        context = read_txt_file(filename)
-        image = get_image_info(file)
-        context["image"] = image
-        main_content["subsection"].append(context)
+        # 读取 TXT 并插入对应图片
+        for file in os.listdir(TXT_PATH):
+            filename = os.path.join(TXT_PATH, file)
+            context = read_txt_file(filename)
+
+            # 获取主图片
+            image = get_image_info(file)
+            if image:
+                context["image"] = image
+
+                # 获取子图片
+                sub_images = get_sub_images(file)
+                if sub_images:
+                    context["sub_images"] = sub_images
+
+                main_content["subsection"].append(context)
+            else:
+                print(f"跳过 {file} 的处理，因为没有找到对应的图片")
 
     thread_pool = []   # 多线程请求，节约时间
     content_dict = {}
@@ -414,25 +542,52 @@ def generate_word_template(title, user, time, TXT_PATH):
     title_dict = {}
     doc.add_page_break()
     doc.add_heading(main_content["title"], level=1)
-    image_number = len(main_content["subsection"])
-    for i, section in enumerate(main_content["subsection"]):
-        image_dict[str(i)] = section["image"]
-        title_dict[str(i)] = section["name"]
-        thread = threading.Thread(target=add_manual, args=(section, platform, i, content_dict))
-        thread_pool.append(thread)
+    # image_number = len(main_content["subsection"])
+    # for i, section in enumerate(main_content["subsection"]):
+    #     image_dict[str(i)] = section["image"]
+    #     title_dict[str(i)] = section["name"]
+    #     thread = threading.Thread(target=add_manual, args=(section, platform, i, content_dict))
+    #     thread_pool.append(thread)
+    #
+    # for thr in thread_pool:
+    #     thr.start()
+    #
+    # for thr in thread_pool:
+    #     thr.join()
+    #
+    # for key in range(image_number):
+    #     doc.add_heading(title_dict[str(key)], level=2)
+    #     paragraph = doc.add_paragraph()
+    #     paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    #     paragraph.add_run().add_picture(image_dict[str(key)], width=Inches(5.5))
+    #     doc.add_paragraph(content_dict[str(key)])
 
-    for thr in thread_pool:
-        thr.start()
+    for section in main_content["subsection"]:
+        # 添加标题
+        doc.add_heading(section["name"], level=2)
 
-    for thr in thread_pool:
-        thr.join()
+        # 1. 添加主图片
+        if "image" in section and section["image"]:
+            paragraph = doc.add_paragraph()
+            paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            try:
+                paragraph.add_run().add_picture(section["image"], width=Inches(5.5))
+            except Exception as e:
+                print(f"添加主图片时出错 {section['image']}: {str(e)}")
 
-    for key in range(image_number):
-        doc.add_heading(title_dict[str(key)], level=2)
-        paragraph = doc.add_paragraph()
-        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-        paragraph.add_run().add_picture(image_dict[str(key)], width=Inches(5.5))
-        doc.add_paragraph(content_dict[str(key)])
+        # 2. 添加内容描述
+        doc.add_paragraph(section["content"])
+
+        # 3. 添加子图片
+        if "sub_images" in section:
+            for sub_image in section["sub_images"]:
+                paragraph = doc.add_paragraph()
+                paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                try:
+                    paragraph.add_run().add_picture(sub_image, width=Inches(5.5))
+                except Exception as e:
+                    print(f"添加子图片时出错 {sub_image}: {str(e)}")
+
 
     add_pager_header(doc, platform)
 
@@ -445,6 +600,7 @@ if __name__ == "__main__":
     platform = sys.argv[1]
     username = sys.argv[2]
     datetime = sys.argv[3]
+    colors = sys.argv[4]
 
     final_path = os.path.join(BASE_DIR, "static", username, datetime)
     if not os.path.exists(final_path):

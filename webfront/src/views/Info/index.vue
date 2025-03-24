@@ -10,6 +10,7 @@
 <script>
 import Dynamic from '@/views/Components/dynamicPage.vue'
 import { createComponentFromString } from '@/utils/utils.js'
+import * as echarts from 'echarts';
 export default{
     name: 'Info',
     components: {
@@ -31,17 +32,17 @@ export default{
         }
     },
     methods: {
-       
+
     },
     watch: {
         pagecode(val){
-            var templateStr = val 
+            var templateStr = val
             var comp = createComponentFromString(templateStr)
             this.dynamicComp = comp
         }
     },
     mounted(){
-        
+
     }
 }
 </script>

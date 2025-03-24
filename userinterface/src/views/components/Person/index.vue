@@ -94,7 +94,7 @@ export default {
     getUserInfo() {
       var user_id = Cookies.get('user_id')
       var param = {
-        'user_id': user_id  
+        'user_id': user_id
       }
       this.$http({
         url: 'api/getuserinfo',
