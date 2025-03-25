@@ -121,13 +121,13 @@ def kill_process_by_port(port):  # 强制终止进程 (限于Linux系统)
 
 
 # 启动 Vue 项目
-def start_vue_project(username, datetime):
+def start_vue_project(username, datetime, colors):
 
     virtual_vue_path = os.path.join(BASE_DIR, "virtual_vue_project", username, datetime, "webfront")
     copy_file(vue_project_path, virtual_vue_path)
 
     # 进入 Vue 项目目录并启动开发服务器
-    write_env_file(virtual_vue_path)
+    write_env_file(virtual_vue_path, username, datetime, colors)
     json_path = os.path.join(BASE_DIR, "llmserver", "port.json")
 
     port = modify_port_file_start(json_path)
