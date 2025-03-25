@@ -1,6 +1,8 @@
 import subprocess
 import os
 import time
+from telnetlib import EC
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -361,6 +363,7 @@ def main_process(IMAGE_PATH, port, username, datetime):
     driver.quit()
 
     shutil.rmtree(user_path)
+
 
 # 主函数
 def main(username, datetime, IMAGE_PATH, colors):
