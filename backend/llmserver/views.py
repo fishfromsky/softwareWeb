@@ -13,6 +13,7 @@ from urllib.parse import urlparse, unquote
 from pathlib import PurePosixPath
 import requests
 from dashscope import ImageSynthesis
+from urllib.parse import quote
 import os
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.backend.settings")
 from django.conf import settings
@@ -34,6 +35,9 @@ MAX_THREADS = 1
 WEB_URL = "http://121.196.229.117:8000/static"
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MEDIUM_PATH = os.path.join(BASE_DIR, "medium")
+
+def build_static_url(username, datetime_str, filename):
+    return f"{settings.STATIC_URL}{quote(username)}/{quote(datetime_str)}/{filename}"
 
 
 def read_json(username, datetime_str):
@@ -552,6 +556,8 @@ def getPageMain(request):
     datetime = request.GET.get("datetime")
     colors = request.GET.get("colors")
 
+    background_url = build_static_url(username, datetime, "background.jpg")
+
     # 若 colors 为空，则使用默认值
     if not colors:
         color_list = ["#40c9c6", "#40c9c6", "#40c9c6", "#40c9c6"]
@@ -579,7 +585,7 @@ def getPageMain(request):
             回复只需要以"<template>"开头, 以"<\/script>"结尾, 不需要其他任何解释说明内容.
             1.要求符合日常用户登录界面业务逻辑.
             2.组件基于element-ui框架.
-            3.根容器背景使用指定图片URL：{WEB_URL}/{username}/{datetime}/background.jpg，请确保图片可以显示,正确保留url中的空格，使用行内式background-image: url('{WEB_URL}/{username}/{datetime}/background.jpg')
+            3.根容器背景使用指定图片URL：{background_url}，请确保图片可以显示,正确保留url中的空格，使用行内式background-image: url('{background_url}')
             确保图片可以完整显示，正好铺满（解决图片过大或者过小显示不全的问题）。
             4.卡片容器需要始终居中,样式要求如下width: 20%;position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);
             5.登录卡片内部划分为标题区、输入区、操作按钮区三个纵向模块，各模块间距比例为1:2:1。
@@ -597,7 +603,7 @@ def getPageMain(request):
         现在有一个后台管理系统叫 {platform}，请为其用户登录页面生成对应的基于 Vue.js 的代码，满足如下要求：
         1. 只返回页面代码部分，代码只包含 <template> 到 </script>，不需要任何解释说明，也不需要 style 块。
         2. 所有样式均使用行内式写在元素的 style 属性中，不能使用 <style> 或 scoped 样式。
-        3. 整个页面作为背景，宽高 100%（width: 100%; height: 100vh;），使用 background-size: cover 显示图片：url('{WEB_URL}/{username}/{datetime}/background.jpg')，居中对齐但在右侧留出一块区域放置登录卡片（margin-right: 80px）。
+        3. 整个页面作为背景，宽高 100%（width: 100%; height: 100vh;），使用 background-size: cover 显示图片：url('{background_url}')，居中对齐但在右侧留出一块区域放置登录卡片（margin-right: 80px）。
         4. 登录卡片宽度 360px，白色背景，圆角，box-shadow，内部使用 Element-UI 的 <el-form>、<el-form-item>、<el-input>、<el-button> 组件，包含用户名、密码两个输入框，均带 prefix-icon。
         5. 登录按钮使用动态行内样式实现鼠标悬停时的背景渐变方向切换、轻微上移等效果。点击后在 onSubmit 中以 alert() 方式演示获取到的用户名、密码。
         6. 登录卡片内的标题需显示“欢迎登录 {platform}”等字样，请在 <h2> 标签中动态拼接 {platform}。
@@ -720,6 +726,9 @@ def getPageVice(request):
     data = read_json(username, datetime)
     platform = data["platform"]
     response = {"code": 0, "message": "success"}
+
+    background_url = build_static_url(username, datetime, "background.jpg")
+
     reasoning_content = ""  # 定义完整思考过程
     content = ""     # 修改这里，使用 content 而不是 answer_content
     is_answering = False   # 判断是否结束思考过程并开始回复
@@ -739,7 +748,7 @@ def getPageVice(request):
         回复只需要以"<template>"开头, 以"<\/script>"结尾, 不需要其他任何解释说明内容.
         1.要求符合日常用户注册界面业务逻辑.
         2.组件基于element-ui框架.
-        3.根容器背景使用指定图片URL：{WEB_URL}/{username}/{datetime}/background.jpg，请确保图片可以显示,正确保留url中的空格，注意图片需要完整显示background-size: cover，使用行内式background-image: url('{WEB_URL}/{username}/{datetime}/background.jpg')
+        3.根容器背景使用指定图片URL：{background_url}，请确保图片可以显示,正确保留url中的空格，注意图片需要完整显示background-size: cover，使用行内式background-image: url('{background_url}')
         4.卡片容器需要始终居中,样式要求如下width: 20%;position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);
         5.登录卡片内部划分为标题区、输入区、操作按钮区三个纵向模块，各模块间距比例为1:2:1。
         6.标题区域固定于卡片顶部，显示欢迎登录等字样，使用大字号粗体文本居中显示，下方保留与输入区的动态间距。
@@ -751,7 +760,7 @@ def getPageVice(request):
     现在有一个后台管理系统叫 {platform}，请为其用户注册页面生成对应的基于 Vue.js 的代码，满足如下要求：
     1. 只返回页面代码部分，代码只包含 <template> 到 </script>，不需要任何解释说明内容，也不需要 style 块。
     2. 所有样式均使用行内式写在元素的 style 属性中，不能使用 <style> 或 scoped 样式。
-    3. 页面背景使用图片：url('{WEB_URL}/{username}/{datetime}/background.jpg')，要求覆盖全屏 (width: 100%; height: 100vh; background-size: cover;)，且在右侧留出一块区域放置注册卡片 (margin-right: 80px)。
+    3. 页面背景使用图片：url('{background_url}')，要求覆盖全屏 (width: 100%; height: 100vh; background-size: cover;)，且在右侧留出一块区域放置注册卡片 (margin-right: 80px)。
     4. 注册卡片宽度 360px、白色背景、圆角、阴影、padding: 40px，内部包含用户名、密码、确认密码、邮箱、电话 5 个输入项，使用 label+input 行内样式加上小字提示 (small 标签)。最后有一个 <el-button> type="primary" 作为“注册”按钮，点击触发 onRegister 方法，方法内通过 alert() 显示表单内容。
     5. 代码需符合常规注册业务逻辑示例：onRegister 中可以先用 alert() 演示获取到的表单信息。
     6. 最终输出必须从 <template> 开始，到 </script> 结束，中间不能有任何额外文字或说明。
