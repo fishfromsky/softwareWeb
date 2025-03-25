@@ -162,6 +162,12 @@ def startProgram(request):
     word_file = f"{WEB_URL}/{username}/{datetime_str}/template_manual.docx"
     introduce_file = f"{WEB_URL}/{username}/{datetime_str}/expanded_description.txt"
 
+    print("[DEBUG] 生成的文件访问路径：")
+    print("PDF下载地址：", code_path)
+    print("Word文档地址：", word_file)
+    print("介绍文档地址：", introduce_file)
+
+
     medium_url = os.path.join(MEDIUM_PATH, username, datetime_str) # 用户存放某用户在某时间下创建的项目的具体信息
     if not os.path.exists(medium_url):
         os.makedirs(medium_url)
