@@ -1,8 +1,7 @@
 import subprocess
 import os
 import time
-from telnetlib import EC
-
+from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -235,7 +234,7 @@ def take_screenshot(index, driver, IMAGE_PATH):
     driver.execute_script(script)
     wait = WebDriverWait(driver, 500)
     wait.until(lambda d: d.execute_script("return window.dataLoaded;"))
-    time.sleep(5)
+    time.sleep(10)
 
     colors_data = driver.execute_script("return window.myColors || null;")
     username_data = driver.execute_script("return window.userName || null;")
