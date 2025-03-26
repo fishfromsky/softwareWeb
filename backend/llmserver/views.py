@@ -83,9 +83,9 @@ def get_response(message):
                     reasoning_content += delta.reasoning_content
                 else:
                     if delta.content != "" and is_answering is False:
-                        print("\n" + "=" * 20 + "完整回复" + "=" * 20 + "\n")
+                        #print("\n" + "=" * 20 + "完整回复" + "=" * 20 + "\n")
                         is_answering = True
-                    print(delta.content, end='', flush=True)
+                    #print(delta.content, end='', flush=True)
                     full_response += delta.content
         return full_response
     except Exception as e:
@@ -163,10 +163,10 @@ def startProgram(request):
     word_file = f"{WEB_URL}/{username}/{datetime_str}/template_manual.docx"
     introduce_file = f"{WEB_URL}/{username}/{datetime_str}/expanded_description.txt"
 
-    print("[DEBUG] 生成的文件访问路径：")
-    print("PDF下载地址：", code_path)
-    print("Word文档地址：", word_file)
-    print("介绍文档地址：", introduce_file)
+    # print("[DEBUG] 生成的文件访问路径：")
+    # print("PDF下载地址：", code_path)
+    # print("Word文档地址：", word_file)
+    # print("介绍文档地址：", introduce_file)
 
 
     medium_url = os.path.join(MEDIUM_PATH, username, datetime_str) # 用户存放某用户在某时间下创建的项目的具体信息
@@ -382,7 +382,7 @@ def getMenuConfig(request): # 生成侧边栏信息
     MESSAGE = [{"role": "system", "content": "You are a helpful programmer and product manager"}]
     question = f"""
     设计一个{platform}的侧边栏, 有如下要求:
-    1. 侧边栏需包含至少2个目录，每个目录名称应与系统业务逻辑密切相关。
+    1. 侧边栏需包含至少6个目录，每个目录名称应与系统业务逻辑密切相关。
     2. 返回结果应为一个Object，每个Object的key为父目录，对应的value为一个List，包含所有子目录名称。
     3. 回答时只需返回上述Object，无需任何解释说明，且返回内容必须以Object的"{{"开始。
     4. 侧边栏的第一个key必须为“主菜单”，且“主菜单”仅能包含数据统计和消息通知两个子目录，不需要别的子目录。
@@ -534,7 +534,7 @@ def getPageInfo(request): # 根据前端返回的当前点击的侧边栏id生�
     {{ {child_name} }} 
     {{ 说明部分文字 }}
     4.侧边栏名称仅为子菜单名称, 不用显示父菜单名称 
-    5.介绍说明文字100字.
+    5.介绍说明文字至少300字
     6.如果代码中含有弹窗部分请介绍弹窗部分的内容，且介绍弹窗部分的内容必须放在最后
 
     """
@@ -686,9 +686,9 @@ def getPageMain(request):
                 reasoning_content += delta.reasoning_content
             else:
                 if delta.content != "" and is_answering is False:
-                    print("\n" + "=" * 20 + "完整回复" + "=" * 20 + "\n")
+                    #print("\n" + "=" * 20 + "完整回复" + "=" * 20 + "\n")
                     is_answering = True
-                print(delta.content, end='', flush=True)
+                #print(delta.content, end='', flush=True)
                 content += delta.content
     response["content"] = content
     messages.append({"role": "assistant", "content": content})
@@ -714,7 +714,7 @@ def getPageMain(request):
                 if delta.content != "" and is_answering is False:
                     #print("\n" + "=" * 20 + "完整回复" + "=" * 20 + "\n")
                     is_answering = True
-                print(delta.content, end='', flush=True)
+                #print(delta.content, end='', flush=True)
                 content += delta.content
     txt_path = os.path.join(BASE_DIR, "Introduction", username, datetime)
     if not os.path.exists(txt_path):
@@ -818,7 +818,7 @@ def getPageVice(request):
                 if delta.content != "" and is_answering is False:
                     #print("\n" + "=" * 20 + "完整回复" + "=" * 20 + "\n")
                     is_answering = True
-                print(delta.content, end='', flush=True)
+                #print(delta.content, end='', flush=True)
                 content += delta.content
     response["content"] = content
     messages.append({"role": "assistant", "content": content})
@@ -844,7 +844,7 @@ def getPageVice(request):
                 if delta.content != "" and is_answering is False:
                     #print("\n" + "=" * 20 + "完整回复" + "=" * 20 + "\n")
                     is_answering = True
-                print(delta.content, end='', flush=True)
+                #print(delta.content, end='', flush=True)
                 content += delta.content
     txt_path = os.path.join(BASE_DIR, "Introduction", username, datetime)
     if not os.path.exists(txt_path):
