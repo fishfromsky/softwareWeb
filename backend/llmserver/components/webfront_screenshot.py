@@ -520,23 +520,23 @@ def generate_word_template(title, user, time, TXT_PATH):
                 doc = add_multi_level(doc, section["content"])
 
         # 读取 TXT 并插入对应图片
-        for file in os.listdir(TXT_PATH):
-            filename = os.path.join(TXT_PATH, file)
-            context = read_txt_file(filename)
+    for file in os.listdir(TXT_PATH):
+        filename = os.path.join(TXT_PATH, file)
+        context = read_txt_file(filename)
 
             # 获取主图片
-            image = get_image_info(file)
-            if image:
-                context["image"] = image
+        image = get_image_info(file)
+        if image:
+            context["image"] = image
 
-                # 获取子图片
-                sub_images = get_sub_images(file)
-                if sub_images:
-                    context["sub_images"] = sub_images
+             # 获取子图片
+            sub_images = get_sub_images(file)
+            if sub_images:
+                 context["sub_images"] = sub_images
 
-                main_content["subsection"].append(context)
-            else:
-                print(f"跳过 {file} 的处理，因为没有找到对应的图片")
+            main_content["subsection"].append(context)
+        else:
+             print(f"跳过 {file} 的处理，因为没有找到对应的图片")
 
     thread_pool = []   # 多线程请求，节约时间
     content_dict = {}
