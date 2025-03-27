@@ -538,10 +538,7 @@ def generate_word_template(title, user, time, TXT_PATH):
         else:
              print(f"跳过 {file} 的处理，因为没有找到对应的图片")
 
-    thread_pool = []   # 多线程请求，节约时间
-    content_dict = {}
-    image_dict = {}
-    title_dict = {}
+   
     doc.add_page_break()
     doc.add_heading(main_content["title"], level=1)
     # image_number = len(main_content["subsection"])
