@@ -520,7 +520,7 @@ def generate_word_template(title, user, time, TXT_PATH):
         # 读取 TXT 并插入对应图片
         for file in os.listdir(TXT_PATH):
             filename = os.path.join(TXT_PATH, file)
-            print("正在处理,",filename)
+        
             context = read_txt_file(filename)
 
             # 获取主图片
