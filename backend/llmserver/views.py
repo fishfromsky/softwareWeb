@@ -379,7 +379,7 @@ def getMenuConfig(request): # 生成侧边栏信息
     MESSAGE.append({"role": "user", "content": question})
     try:
         full_reply = api_call(MESSAGE)
-        # print("[DEBUG] 大模型完整返回:", full_reply)
+        print("[DEBUG] 大模型完整返回:", full_reply)
         menu = json.loads(full_reply)
     except Exception as e:
         print(f"所有尝试均失败: {e}")
