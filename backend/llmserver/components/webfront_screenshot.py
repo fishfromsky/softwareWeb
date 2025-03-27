@@ -17,6 +17,8 @@ import shutil
 import re
 from utils import add_multi_level, add_manual, add_pager_header
 import threading
+from natsort import natsorted
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
@@ -520,7 +522,8 @@ def generate_word_template(title, user, time, TXT_PATH):
                 doc = add_multi_level(doc, section["content"])
 
         # 读取 TXT 并插入对应图片
-    for file in os.listdir(TXT_PATH):
+    files = natsorted(os.listdir(TXT_PATH))
+    for file in files:
         filename = os.path.join(TXT_PATH, file)
         context = read_txt_file(filename)
 
