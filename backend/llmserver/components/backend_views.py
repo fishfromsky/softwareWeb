@@ -125,6 +125,7 @@ def first_prompt(software_name, programming_language, txt_file_path, final_path)
     【面向领域/行业】
     【软件的主要功能】
     【软件的技术特点】
+    请注意:【源程序量】后面仅需要填行数
     """
 
     messages.append({"role": "user", "content": user_input})
@@ -194,12 +195,12 @@ def generate_code_with_details(programming_language, layer, code_framework):
 # 细化每个模块的代码生成，修改生成“用户表设计”模块的部分
 def generate_submodules_for_layer(programming_language, layer_name, code_framework, json_answer=None):
     submodules = {
-        "前端": ["页面布局", "组件开发", "状态管理", "API调用"],
-        "后端": ["用户认证模块", "数据存储模块", "错误处理模块", "日志记录模块"],
-        "数据库": ["用户表设计", "存储过程", "视图", "索引优化"],
-        "API": ["用户API接口", "订单API接口", "认证接口", "限流接口"],
-        "业务": ["用户管理", "订单处理", "支付处理", "库存管理"],
-        "安全": ["数据加密", "权限验证"],
+        "前端": ["页面布局", "组件开发", "状态管理", "API调用", "权限前端控制"],
+        "后端": ["用户认证模块", "数据存储模块", "错误处理模块", "日志记录模块", "配置管理模块"],
+        "数据库": ["用户表设计", "存储过程", "视图", "索引优化", "数据备份机制"],
+        "API": ["用户API接口", "订单API接口", "认证接口", "限流接口", "第三方API对接"],
+        "业务": ["用户管理", "订单处理", "支付处理", "库存管理", "通知系统"],
+        "安全": ["数据加密", "权限验证", "访问控制", "输入输出校验", "登录日志追踪"],
     }
 
     all_code = []
