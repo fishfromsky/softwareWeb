@@ -883,29 +883,49 @@ def generate_word_template(title, user, time, TXT_PATH):
     for section in main_content["subsection"]:
         # 添加标题
         doc.add_heading(section["name"], level=2)
-
-        # 1. 添加主图片
+        
+        # 1. 添加主图片 - 优先使用标注版本
         if "image" in section and section["image"]:
             paragraph = doc.add_paragraph()
             paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            
+            # 检查是否存在标注版本
+            image_path = section["image"]
+            name, ext = os.path.splitext(image_path)
+            annotated_path = f"{name}_annotated{ext}"
+            
             try:
-                paragraph.add_run().add_picture(section["image"], width=Inches(5.5))
+                if os.path.exists(annotated_path):
+                    paragraph.add_run().add_picture(annotated_path, width=Inches(5.5))
+                    print(f"使用标注版图片: {annotated_path}")
+                else:
+                    paragraph.add_run().add_picture(image_path, width=Inches(5.5))
+                    print(f"使用原始图片: {image_path}")
             except Exception as e:
-                print(f"添加主图片时出错 {section['image']}: {str(e)}")
-
+                print(f"添加图片时出错: {str(e)}")
+        
         # 2. 添加内容描述
         doc.add_paragraph(section["content"])
-
-        # 3. 添加子图片
+                
+        # 3. 添加子图片 - 同样优先使用标注版本
         if "sub_images" in section:
             for sub_image in section["sub_images"]:
                 paragraph = doc.add_paragraph()
                 paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                
+                # 检查是否存在标注版本
+                name, ext = os.path.splitext(sub_image)
+                annotated_sub_path = f"{name}_annotated{ext}"
+                
                 try:
-                    paragraph.add_run().add_picture(sub_image, width=Inches(5.5))
+                    if os.path.exists(annotated_sub_path):
+                        paragraph.add_run().add_picture(annotated_sub_path, width=Inches(5.5))
+                        print(f"使用标注版子图片: {annotated_sub_path}")
+                    else:
+                        paragraph.add_run().add_picture(sub_image, width=Inches(5.5))
+                        print(f"使用原始子图片: {sub_image}")
                 except Exception as e:
-                    print(f"添加子图片时出错 {sub_image}: {str(e)}")
-
+                    print(f"添加子图片时出错: {str(e)}")
 
     add_pager_header(doc, platform)
 
