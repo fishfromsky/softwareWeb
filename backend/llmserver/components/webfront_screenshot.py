@@ -539,7 +539,7 @@ def generate_word_template(title, user, time, TXT_PATH):
     doc.add_heading("系统设计", level=1)
     doc.add_heading("系统架构图", level=2)
     try:
-        system_img_path = os.path.join(BASE_DIR, "static", user, time_str, "system_architecture.png")
+        system_img_path = os.path.join(BASE_DIR, "static", user, time, "system_architecture.png")
         if os.path.exists(system_img_path):
             para = doc.add_paragraph()
             para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
