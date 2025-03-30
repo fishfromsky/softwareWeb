@@ -192,6 +192,34 @@ def startProgram(request):
         introduce_download=introduce_file
     )
     record.save()
+    # 生成侧边栏信息
+    MESSAGE = [{"role": "system", "content": "You are a helpful programmer and product manager"}]
+    question = f"""
+    设计一个{platform}的侧边栏, 有如下要求:
+    1. 侧边栏需包含至少2个目录，每个目录名称应与系统业务逻辑密切相关。
+    2. 返回结果应为一个Object，每个Object的key为父目录，对应的value为一个List，包含所有子目录名称。
+    3. 回答时只需返回上述Object，无需任何解释说明，且返回内容必须以Object的"{{"开始。
+    4. 侧边栏的第一个key必须为"主菜单"，且"主菜单"仅能包含数据统计和消息通知两个子目录，不需要别的子目录。
+    """
+    MESSAGE.append({"role": "user", "content": question})
+    try:
+        full_reply = api_call(MESSAGE)
+        menu = json.loads(full_reply)
+    except Exception as e:
+        print(f"侧边栏生成失败: {e}")
+        menu = {"主菜单": ["数据统计", "消息通知"], "系统管理": ["用户管理", "权限设置"]}
+    
+    MENU_CONFIG = menu
+    json_file = os.path.join(MEDIUM_PATH, username, datetime_str, "menu.json")
+    with open(json_file, "w", encoding="utf-8") as f:
+        json.dump(MENU_CONFIG, f)
+    
+    # 启动后端代码生成线程
+    thread_backend = threading.Thread(
+        target=run_another_script_backend,
+        args=(platform, language, username, datetime_str)
+    )
+    thread_backend.start()
 
     thread1 = threading.Thread(
         target=run_another_script_webfront,
@@ -373,61 +401,21 @@ def getNameConfig(request):
 
 
 @require_http_methods(["GET"])
-def getMenuConfig(request): # 生成侧边栏信息
+def getMenuConfig(request): # 获取侧边栏信息
     username = request.GET.get("username")
     datetime = request.GET.get("datetime")
-    data = read_json(username, datetime)
-    platform = data["platform"]
-    language = data["language"]
     response = {"code": 0, "message": "success"}
-    MESSAGE = [{"role": "system", "content": "You are a helpful programmer and product manager"}]
-    question = f"""
-    设计一个{platform}的侧边栏, 有如下要求:
-    1. 侧边栏需包含至少6个目录，每个目录名称应与系统业务逻辑密切相关。
-    2. 返回结果应为一个Object，每个Object的key为父目录，对应的value为一个List，包含所有子目录名称。
-    3. 回答时只需返回上述Object，无需任何解释说明，且返回内容必须以Object的"{{"开始。
-    4. 侧边栏的第一个key必须为“主菜单”，且“主菜单”仅能包含数据统计和消息通知两个子目录，不需要别的子目录。
-    """
-
-    # #测试
-    # question = f"""
-    # 设计一个{platform}的侧边栏, 有如下要求:
-    # 1. 侧边栏需仅包含2个目录，每个目录名称应与系统业务逻辑密切相关。
-    # 2. 返回结果应为一个Object，每个Object的key为父目录，对应的value为一个List，包含所有子目录名称，每个父目录最多两个子目录。
-    # 3. 回答时只需返回上述Object，无需任何解释说明，且返回内容必须以Object的"{{"开始。
-    # 4. 侧边栏的第一个key必须为“主菜单”，且“主菜单”仅能包含数据统计和消息通知两个子目录，不需要别的子目录。
-    # """
-
-    MESSAGE.append({"role": "user", "content": question})
-    try:
-        full_reply = api_call(MESSAGE)
-        # print("[DEBUG] 大模型完整返回:", full_reply)
-        menu = json.loads(full_reply)
-    except Exception as e:
-        print(f"所有尝试均失败: {e}")
-        return JsonResponse({"code": 1, "message": "模型调用失败"})
-
-    MENU_CONFIG = menu
+    
+    # 直接读取已生成的菜单配置
     json_file = os.path.join(MEDIUM_PATH, username, datetime, "menu.json")
-    with open(json_file, "w", encoding="utf-8") as f:
-        json.dump(MENU_CONFIG, f)
-
-    # 调用图生成函数
-    save_path = os.path.join(BASE_DIR, "static", username, datetime)
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
-
     try:
-        architecture_path = generate_system_architecture_diagram_from_menu(platform, save_path, menu)
-        response["architecture_path"] = architecture_path.replace(BASE_DIR, "").replace("\\", "/")
+        with open(json_file, "r", encoding="utf-8") as f:
+            MENU_CONFIG = json.load(f)
+        response["menu"] = MENU_CONFIG
     except Exception as e:
-        print(f"[ERROR] 生成系统架构图失败: {e}")
-        response["architecture_path"] = None
-
-    response["menu"] = MENU_CONFIG
-    # print(f"开始生成后端代码")
-    thread2 = threading.Thread(target=run_another_script_backend, args=(platform, language, username, datetime))
-    thread2.start()
+        print(f"读取菜单配置失败: {e}")
+        response = {"code": 1, "message": "读取菜单配置失败"}
+    
     return JsonResponse(response)
 
 #生成系统架构图
