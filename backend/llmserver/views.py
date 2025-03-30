@@ -381,22 +381,22 @@ def getMenuConfig(request): # 生成侧边栏信息
     language = data["language"]
     response = {"code": 0, "message": "success"}
     MESSAGE = [{"role": "system", "content": "You are a helpful programmer and product manager"}]
-    # question = f"""
-    # 设计一个{platform}的侧边栏, 有如下要求:
-    # 1. 侧边栏需包含至少6个目录，每个目录名称应与系统业务逻辑密切相关。
-    # 2. 返回结果应为一个Object，每个Object的key为父目录，对应的value为一个List，包含所有子目录名称。
-    # 3. 回答时只需返回上述Object，无需任何解释说明，且返回内容必须以Object的"{{"开始。
-    # 4. 侧边栏的第一个key必须为“主菜单”，且“主菜单”仅能包含数据统计和消息通知两个子目录，不需要别的子目录。
-    # """
-
-    #测试
     question = f"""
     设计一个{platform}的侧边栏, 有如下要求:
-    1. 侧边栏需仅包含2个目录，每个目录名称应与系统业务逻辑密切相关。
-    2. 返回结果应为一个Object，每个Object的key为父目录，对应的value为一个List，包含所有子目录名称，每个父目录最多两个子目录。
+    1. 侧边栏需包含至少6个目录，每个目录名称应与系统业务逻辑密切相关。
+    2. 返回结果应为一个Object，每个Object的key为父目录，对应的value为一个List，包含所有子目录名称。
     3. 回答时只需返回上述Object，无需任何解释说明，且返回内容必须以Object的"{{"开始。
     4. 侧边栏的第一个key必须为“主菜单”，且“主菜单”仅能包含数据统计和消息通知两个子目录，不需要别的子目录。
     """
+
+    # #测试
+    # question = f"""
+    # 设计一个{platform}的侧边栏, 有如下要求:
+    # 1. 侧边栏需仅包含2个目录，每个目录名称应与系统业务逻辑密切相关。
+    # 2. 返回结果应为一个Object，每个Object的key为父目录，对应的value为一个List，包含所有子目录名称，每个父目录最多两个子目录。
+    # 3. 回答时只需返回上述Object，无需任何解释说明，且返回内容必须以Object的"{{"开始。
+    # 4. 侧边栏的第一个key必须为“主菜单”，且“主菜单”仅能包含数据统计和消息通知两个子目录，不需要别的子目录。
+    # """
 
     MESSAGE.append({"role": "user", "content": question})
     try:

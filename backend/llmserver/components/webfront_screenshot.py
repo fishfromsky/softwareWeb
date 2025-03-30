@@ -494,7 +494,6 @@ def generate_word_template(title, user, time, TXT_PATH):
             run2.bold = True
             run2.font.name = "黑体"
             run2.font.size = Pt(40)
-            run2.font.color.rgb = RGBColor(255, 0, 0)
 
             paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
             break
