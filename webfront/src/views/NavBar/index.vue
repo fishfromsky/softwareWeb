@@ -1,6 +1,5 @@
 <template>
   <el-menu
-    default-active="1-1"
     class="sidebar"
     :unique-opened="true"
     :background-color="computedBackground"
