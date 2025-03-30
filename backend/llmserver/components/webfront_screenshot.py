@@ -370,15 +370,17 @@ def main_process(IMAGE_PATH, port, username, datetime):
     # 启动浏览器
     driver = webdriver.Chrome(service=Service(chrome_driver_path, port=0), options=options)
 
-    driver.get(f"http://localhost:{port}/login")
-    take_screenshot("0-0", driver, IMAGE_PATH)
+    try:
+        driver.get(f"http://localhost:{port}/login")
+        take_screenshot("0-0", driver, IMAGE_PATH)
 
-    driver.get(f"http://localhost:{port}/register")
-    take_screenshot("0-1", driver, IMAGE_PATH)
+        driver.get(f"http://localhost:{port}/register")
+        take_screenshot("0-1", driver, IMAGE_PATH)
 
-    # 访问 Vue 项目
-    driver.get(f"http://localhost:{port}/")
-    take_screenshot("1-1", driver, IMAGE_PATH)
+        # 访问 Vue 项目首页
+        driver.get(f"http://localhost:{port}/")
+        take_screenshot("1-1", driver, IMAGE_PATH)
+
 
         # 收集所有需要处理的菜单项
         menu_items = []
@@ -487,7 +489,6 @@ def main_process(IMAGE_PATH, port, username, datetime):
         thread.join(timeout=600)  # 最多等待10分钟
     
     print("所有菜单项处理完成或超时")
-
 
 # 主函数
 def main(username, datetime, IMAGE_PATH, colors):
