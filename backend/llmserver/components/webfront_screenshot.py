@@ -422,7 +422,7 @@ def main_process(IMAGE_PATH, port, username, datetime):
                 os.makedirs(user_path)
                 
             thread_options = webdriver.ChromeOptions()
-            thread_options.binary_location = os.path.join(os.path.dirname(BASE_DIR), "chrome", "chrome.exe")
+            thread_options.binary_location = os.path.join(os.path.dirname(BASE_DIR), "chrome", "chrome")
             thread_options.add_argument("--disable-application-cache")
             thread_options.add_argument("--no-sandbox")
             thread_options.add_argument(f"--user-data-dir={user_path}")
