@@ -235,6 +235,139 @@ def generate_config(PLATFORM, username, datetime):
     except Exception as e:
         raise e
 
+def draw_annotations(image_path, elements):
+    """使用百分比位置绘制标注"""
+    try:
+        img = Image.open(image_path)
+        draw = ImageDraw.Draw(img)
+        
+        # 获取图片尺寸
+        img_width, img_height = img.size
+        
+        try:
+            number_font = ImageFont.truetype("simhei.ttf", 22)  # 序号字体加大
+            desc_font = ImageFont.truetype("simhei.ttf", 22)    # 说明文字字体加大
+        except:
+            number_font = ImageFont.load_default()
+            desc_font = ImageFont.load_default()
+            
+        for i, element in enumerate(elements):
+            pos = element["position"]
+            
+            # 将百分比转换回像素坐标
+            x = int((pos["x"] / 100) * img_width)
+            y = int((pos["y"] / 100) * img_height)
+            width = int((pos["width"] / 100) * img_width)
+            height = int((pos["height"] / 100) * img_height)
+            
+            # 绘制矩形框
+            draw.rectangle(
+                [(x-20, y-10), (x + width+10, y + height+10)],
+                outline="red",
+                width=5
+            )
+            
+            # 在框的左上角添加序号
+            draw.text(
+                (x-10, max(0, y - 25)),
+                str(i + 1),
+                fill="red",
+                font=number_font
+            )
+            
+            # 在底部添加说明文字
+            note_y = img_height - 30 * (len(elements) - i)
+            draw.text(
+                (10, note_y),
+                f"{i+1}. {element['description'][:50]}...",
+                fill="red",
+                font=desc_font
+            )
+        
+        annotated_path = image_path.replace(".png", "_annotated.png")
+        img.save(annotated_path)
+        return annotated_path
+        
+    except Exception as e:
+        print(f"绘制标注时出错: {str(e)}")
+        return None
+def analyze_page_elements(driver, client):
+    """分析页面元素并获取相对位置（百分比），只查找表格和按钮，并获取HTML描述"""
+    elements_info = []
+    
+    # 获取页面可视区域的尺寸
+    viewport_width = driver.execute_script("return document.documentElement.clientWidth")
+    viewport_height = driver.execute_script("return document.documentElement.clientHeight")
+    
+    selectors = {
+        "表格": ".el-table",
+        "表单": "form",
+        "功能按钮": ".el-button:not(.el-table *)",
+    }
+    
+    for element_type, selector in selectors.items():
+        elements = driver.find_elements(By.CSS_SELECTOR, selector)
+        for element in elements:
+            try:
+                # 获取元素的HTML代码
+                html_content = driver.execute_script("return arguments[0].outerHTML;", element)
+                
+                # 根据元素类型生成不同的提示词
+                if element_type == "表格":
+                    prompt = f"""
+                    分析这个表格的HTML代码，用10-20字描述它的主要功能：
+                    {html_content}
+                    只需要返回描述文字，不需要任何解释。
+                    """
+                else:  # 按钮类型
+                    prompt = f"""
+                    分析这个按钮的HTML代码，用10-20字描述它的功能：
+                    {html_content}
+                    只需要返回描述文字，不需要任何解释。
+                    """
+                
+                # 调用AI获取描述
+                try:
+                    completion = client.chat.completions.create(
+                        model="qwen-plus",
+                        messages=[{"role": "user", "content": prompt}]
+                    )
+                    ai_description = completion.choices[0].message.content.strip()
+                except Exception as e:
+                    print(f"AI描述生成失败: {str(e)}")
+                    ai_description = "数据表格" if element_type == "表格" else element.text.strip()
+                
+                # 获取元素位置信息
+                rect = driver.execute_script("""
+                    var rect = arguments[0].getBoundingClientRect();
+                    var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                    var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    var viewWidth = document.documentElement.clientWidth;
+                    var viewHeight = document.documentElement.clientHeight;
+                    
+                    return {
+                        x: ((rect.left + scrollLeft) / viewWidth) * 100,
+                        y: ((rect.top + scrollTop) / viewHeight) * 100,
+                        width: (rect.width / viewWidth) * 100,
+                        height: (rect.height / viewHeight) * 100
+                    };
+                """, element)
+                
+                elements_info.append({
+                    "type": element_type,
+                    "position": {
+                        "x": float(rect['x']),
+                        "y": float(rect['y']),
+                        "width": float(rect['width']),
+                        "height": float(rect['height'])
+                    },
+                    "description": f"{element_type}: {ai_description}"
+                })
+            except Exception as e:
+                print(f"处理元素时出错: {str(e)}")
+    
+    return elements_info
+
 
 def take_screenshot(index, driver, IMAGE_PATH):
     script = f"""
@@ -256,7 +389,13 @@ def take_screenshot(index, driver, IMAGE_PATH):
         screenshot_path = os.path.join(IMAGE_PATH, f"{index}.png")
         driver.save_screenshot(screenshot_path)
         print(f"截图已保存为 {screenshot_path}")
-
+        elements = analyze_page_elements(driver, client)
+        
+        # 在截图上添加标注
+        if elements:
+            annotated_path = draw_annotations(screenshot_path, elements)
+            print(f"已生成标注后的截图: {annotated_path}")
+            
         # 查找所有新增按钮
         add_buttons = driver.find_elements(By.CLASS_NAME, "add")
         print(f"找到 {len(add_buttons)} 个新增按钮")
@@ -379,6 +518,27 @@ def main_process(IMAGE_PATH, port, username, datetime):
 
         # 访问 Vue 项目首页
         driver.get(f"http://localhost:{port}/")
+        time.sleep(2)  # 等待页面加载
+        
+        # 明确点击1-1菜单项
+        try:
+            # 先找到菜单容器
+            menu_container = driver.find_element(By.ID, "menu")
+            # 然后找到第一个父菜单并点击（如果未展开）
+            first_parent = menu_container.find_elements(By.CLASS_NAME, "parent-menu")[0]
+            first_parent.click()
+            time.sleep(0.5)  # 等待菜单展开
+            
+            # 找到第一个子菜单项并点击
+            first_sub_item = first_parent.find_elements(By.XPATH, ".//following-sibling::ul//li")[0]
+            first_sub_item.click()
+            time.sleep(1)  # 等待页面响应
+            
+            print("成功点击了1-1菜单项")
+        except Exception as e:
+            print(f"点击1-1菜单项失败: {str(e)}")
+            
+        # 然后再截图
         take_screenshot("1-1", driver, IMAGE_PATH)
 
 
@@ -531,47 +691,62 @@ def read_txt_file(filename):
 
 
 def get_image_info(file):
+    """获取图片信息"""
     index = file.split(".")[0]
+    #print(f"\n正在查找图片 {index}.* ...")
+    #print(f"在目录: {IMAGE_PATH}")
+    
     try:
         image_files = os.listdir(IMAGE_PATH)
+       # print(f"目录中的所有文件: {image_files}")
+        
         for file_name in image_files:
             current_index = file_name.split(".")[0]
+            #print(f"对比: {current_index} vs {index}")
+            
             if current_index == index:
                 image_path = os.path.join(IMAGE_PATH, file_name)
                 if os.path.exists(image_path):
+                    #print(f"找到匹配的图片: {image_path}")
                     return image_path
                 else:
                     print(f"文件路径存在问题: {image_path}")
-
-        print(f"警告: 未找到图片文件 {index}.*")
+                    
+        #print(f"警告: 未找到图片文件 {index}.*")
         return None
     except Exception as e:
         print(f"查找图片时出错: {str(e)}")
         return None
-
+    
 
 def get_sub_images(file):
+    """获取带数字后缀的相关图片
+    例如: 对于文件 "2-1.txt", 查找 "2-1-1.png", "2-1-2.png" 等图片
+    """
     base_index = file.split(".")[0]  # 获取基础索引，如 "2-1"
     sub_images = []
-
+    
     try:
         image_files = os.listdir(IMAGE_PATH)
-
+        #print(f"\n查找子图片，基础索引: {base_index}")
+        #print(f"在目录中的所有文件: {image_files}")
+        
         for image_file in image_files:
             if image_file.startswith(f"{base_index}-"):  # 匹配前缀
                 image_path = os.path.join(IMAGE_PATH, image_file)
                 if os.path.exists(image_path):
+                    #print(f"找到匹配的子图片: {image_path}")
                     sub_images.append(image_path)
-
+                    
         if not sub_images:
             print(f"未找到 {base_index}-* 的子图片")
-
+            
         return sorted(sub_images)  # 按文件名排序返回
-
+        
     except Exception as e:
         print(f"查找子图片时出错: {str(e)}")
         return []
-
+  
 def generate_word_template(title, user, time, TXT_PATH):
     doc = Document(os.path.join(BASE_DIR, "medium", "template.docx"))
     version_str = "V1.0"
