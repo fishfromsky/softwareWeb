@@ -7,6 +7,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from docx import Document
+from docx.shared import Pt
+from docx.shared import RGBColor
 from tenacity import retry, stop_after_attempt, wait_exponential
 from openai import OpenAI
 from docx.shared import Inches
@@ -458,34 +460,46 @@ def get_sub_images(file):
 
 def generate_word_template(title, user, time, TXT_PATH):
     doc = Document(os.path.join(BASE_DIR, "medium", "template.docx"))
-
+    version_str = "V1.0"
     main_info = {
         "title": title,
-        "table": [
-            {"version": "v1.0", "date": time, "name": user, "info": "初始版本"},
-        ]
+        "table": [{"version": version_str, "date": time, "name": user, "info": "初始版本"}]
     }
-
     config = [
-        {
-            "name": "环境描述",
-            "subsection": []
-        },
-        {
-            "name": "开发目的",
-            "content": ""
-        },
-        {
-            "name": "功能描述",
-            "content": {}
-        }
+        {"name": "环境描述", "subsection": []},
+        {"name": "开发目的", "content": ""},
+        {"name": "功能描述", "content": ""}
     ]
+    main_content = {"title": "使用说明", "subsection": []}
 
-    main_content = {
-        "title": "使用说明",
-        "subsection": []
-    }
+    # 设置页眉
+    section = doc.sections[0]
+    header = section.header
+    header_paragraph = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
+    header_paragraph.clear()
+    run = header_paragraph.add_run(f"{title} {version_str}")
+    run.font.name = "宋体"
+    header_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
 
+    # 替换 {{ title }} 为标题 + 操作手册
+    for paragraph in doc.paragraphs:
+        if "{{ title }}" in paragraph.text:
+            paragraph.clear()
+            run1 = paragraph.add_run(f"{title} {version_str}")
+            run1.bold = True
+            run1.font.name = "黑体"
+            run1.font.size = Pt(45)
+
+            run2 = paragraph.add_run("\n操作手册")
+            run2.bold = True
+            run2.font.name = "黑体"
+            run2.font.size = Pt(40)
+            run2.font.color.rgb = RGBColor(255, 0, 0)
+
+            paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            break
+
+    # 生成配置信息
     config_content = generate_config(title, user, time)
 
     for i, key in enumerate(config_content.keys()):
@@ -496,10 +510,6 @@ def generate_word_template(title, user, time, TXT_PATH):
             })
         else:
             config[i-1]["content"] = config_content[key]
-
-    for paragraph in doc.paragraphs:
-        if "{{ title }}" in paragraph.text:
-            paragraph.text = paragraph.text.replace("{{ title }}", main_info["title"])
 
     # 作者信息写入表格
     table = doc.tables[0]
@@ -523,6 +533,21 @@ def generate_word_template(title, user, time, TXT_PATH):
             else:
                 # 添加带序号的段落
                 doc = add_multi_level(doc, section["content"])
+
+    # 添加第五部分：系统设计（架构图）
+    doc.add_page_break()
+    doc.add_heading("系统设计", level=1)
+    doc.add_heading("系统架构图", level=2)
+    try:
+        system_img_path = os.path.join(BASE_DIR, "static", user, time_str, "system_architecture.png")
+        if os.path.exists(system_img_path):
+            para = doc.add_paragraph()
+            para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            para.add_run().add_picture(system_img_path, width=Inches(5.5))
+        else:
+            print("⚠️ 未找到系统架构图:", system_img_path)
+    except Exception as e:
+        print(f"插入系统架构图失败: {e}")
 
         # 读取 TXT 并插入对应图片
     files = natsorted(os.listdir(TXT_PATH))

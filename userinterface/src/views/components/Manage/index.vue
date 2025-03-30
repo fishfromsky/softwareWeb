@@ -39,37 +39,12 @@ export default {
     name: 'manage',
     data() {
         return {
-            tableData: [
-               
-            ],
+            tableData: [],
             table_loading: true
         };
     },
     methods: {
-        handleDownLoadPDF(data){
-            var params = {
-                'time': data.time,
-                'user_id': data.user
-            }
-            this.$http({
-                url: 'api/pdfdownload',
-                method: 'get',
-                responseType: 'blob',
-                params: params
-            }).then(res=>{
-                const url = window.URL.createObjectURL(new Blob([res.data]))
-                const link = document.createElement('a');
-                
-                link.href = url;
-                link.setAttribute('download', 'code.pdf'); 
-                document.body.appendChild(link);
-                link.click();
-
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(link);
-            })
-        },
-        handleDownloadTXT(data){
+        handleDownloadTXT(data) {
             var params = {
                 'time': data.time,
                 'user_id': data.user
@@ -79,19 +54,18 @@ export default {
                 method: 'get',
                 responseType: 'blob',
                 params: params
-            }).then(res=>{
+            }).then(res => {
                 const url = window.URL.createObjectURL(new Blob([res.data]))
-                const link = document.createElement('a');
-                
-                link.href = url;
-                link.setAttribute('download', 'description.txt'); 
-                document.body.appendChild(link);
-                link.click();
-
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(link);
+                const link = document.createElement('a')
+                link.href = url
+                link.setAttribute('download', `${data.name}.txt`)
+                document.body.appendChild(link)
+                link.click()
+                window.URL.revokeObjectURL(url)
+                document.body.removeChild(link)
             })
         },
+
         handleDownloadWord(data) {
             var params = {
                 'time': data.time,
@@ -102,19 +76,40 @@ export default {
                 method: 'get',
                 responseType: 'blob',
                 params: params
-            }).then(res=>{
+            }).then(res => {
                 const url = window.URL.createObjectURL(new Blob([res.data]))
-                const link = document.createElement('a');
-                
-                link.href = url;
-                link.setAttribute('download', 'introduction.docx'); 
-                document.body.appendChild(link);
-                link.click();
-
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(link);
+                const link = document.createElement('a')
+                link.href = url
+                link.setAttribute('download', `${data.name}操作手册.docx`)
+                document.body.appendChild(link)
+                link.click()
+                window.URL.revokeObjectURL(url)
+                document.body.removeChild(link)
             })
         },
+
+        handleDownLoadPDF(data) {
+            var params = {
+                'time': data.time,
+                'user_id': data.user
+            }
+            this.$http({
+                url: 'api/pdfdownload',
+                method: 'get',
+                responseType: 'blob',
+                params: params
+            }).then(res => {
+                const url = window.URL.createObjectURL(new Blob([res.data]))
+                const link = document.createElement('a')
+                link.href = url
+                link.setAttribute('download', `${data.name}代码.pdf`)
+                document.body.appendChild(link)
+                link.click()
+                window.URL.revokeObjectURL(url)
+                document.body.removeChild(link)
+            })
+        },
+
         handleDelete(index, row) {
             MessageBox.confirm('此操作将永久删除该记录, 是否继续?', '提示', {
                 confirmButtonText: '确定',
@@ -130,7 +125,7 @@ export default {
                     url: 'api/deleterecord',
                     method: 'get',
                     params: params
-                }).then(res=>{
+                }).then(res => {
                     this.$message.success('删除记录成功')
                     this.getMetadata()
                 })
@@ -138,10 +133,11 @@ export default {
                 this.$message({
                     type: 'info',
                     message: '已取消删除'
-                });          
+                });
             });
         },
-        getMetadata(){
+
+        getMetadata() {
             var userId = Cookies.get('user_id')
             var params = {
                 'user_id': userId
@@ -150,16 +146,16 @@ export default {
                 url: 'api/getuserrecord',
                 method: 'get',
                 params: params
-            }).then(res=>{
+            }).then(res => {
                 this.table_loading = false
                 this.tableData = res.data.data
             })
         }
     },
-    mounted(){
+    mounted() {
         this.getMetadata()
     }
-};
+}
 </script>
 
 <style scoped>

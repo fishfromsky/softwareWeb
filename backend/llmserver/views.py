@@ -14,6 +14,7 @@ from pathlib import PurePosixPath
 import requests
 from dashscope import ImageSynthesis
 from urllib.parse import quote
+from graphviz import Digraph
 import os
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.backend.settings")
 from django.conf import settings
@@ -380,13 +381,23 @@ def getMenuConfig(request): # 生成侧边栏信息
     language = data["language"]
     response = {"code": 0, "message": "success"}
     MESSAGE = [{"role": "system", "content": "You are a helpful programmer and product manager"}]
+    # question = f"""
+    # 设计一个{platform}的侧边栏, 有如下要求:
+    # 1. 侧边栏需包含至少6个目录，每个目录名称应与系统业务逻辑密切相关。
+    # 2. 返回结果应为一个Object，每个Object的key为父目录，对应的value为一个List，包含所有子目录名称。
+    # 3. 回答时只需返回上述Object，无需任何解释说明，且返回内容必须以Object的"{{"开始。
+    # 4. 侧边栏的第一个key必须为“主菜单”，且“主菜单”仅能包含数据统计和消息通知两个子目录，不需要别的子目录。
+    # """
+
+    #测试
     question = f"""
     设计一个{platform}的侧边栏, 有如下要求:
-    1. 侧边栏需包含至少6个目录，每个目录名称应与系统业务逻辑密切相关。
-    2. 返回结果应为一个Object，每个Object的key为父目录，对应的value为一个List，包含所有子目录名称。
+    1. 侧边栏需仅包含2个目录，每个目录名称应与系统业务逻辑密切相关。
+    2. 返回结果应为一个Object，每个Object的key为父目录，对应的value为一个List，包含所有子目录名称，每个父目录最多两个子目录。
     3. 回答时只需返回上述Object，无需任何解释说明，且返回内容必须以Object的"{{"开始。
     4. 侧边栏的第一个key必须为“主菜单”，且“主菜单”仅能包含数据统计和消息通知两个子目录，不需要别的子目录。
     """
+
     MESSAGE.append({"role": "user", "content": question})
     try:
         full_reply = api_call(MESSAGE)
@@ -400,12 +411,58 @@ def getMenuConfig(request): # 生成侧边栏信息
     json_file = os.path.join(MEDIUM_PATH, username, datetime, "menu.json")
     with open(json_file, "w", encoding="utf-8") as f:
         json.dump(MENU_CONFIG, f)
+
+    # 调用图生成函数
+    save_path = os.path.join(BASE_DIR, "static", username, datetime)
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+
+    try:
+        architecture_path = generate_system_architecture_diagram_from_menu(platform, save_path, menu)
+        response["architecture_path"] = architecture_path.replace(BASE_DIR, "").replace("\\", "/")
+    except Exception as e:
+        print(f"[ERROR] 生成系统架构图失败: {e}")
+        response["architecture_path"] = None
+
     response["menu"] = MENU_CONFIG
     # print(f"开始生成后端代码")
     thread2 = threading.Thread(target=run_another_script_backend, args=(platform, language, username, datetime))
     thread2.start()
     return JsonResponse(response)
 
+#生成系统架构图
+def generate_system_architecture_diagram_from_menu(platform_name, save_path, menu_dict):
+    dot = Digraph(comment=f'{platform_name} 系统架构图', format='png')
+    dot.attr(fontname="Microsoft YaHei")  # 支持中文字体
+
+    # 核心结构
+    dot.node('FE', '前端\n(Vue)', shape='box', fontname="Microsoft YaHei")
+    dot.node('BE', '后端\n(Spring Boot)', shape='box', fontname="Microsoft YaHei")
+    dot.node('DB', '数据库\n(MySQL)', shape='cylinder', fontname="Microsoft YaHei")
+    dot.node('EXT', '外部服务\n(预留)', shape='box', fontname="Microsoft YaHei")
+
+    dot.edge('FE', 'BE', label='REST API', fontname="Microsoft YaHei")
+    dot.edge('BE', 'DB', label='数据交互', fontname="Microsoft YaHei")
+    dot.edge('BE', 'EXT', label='预留接口', fontname="Microsoft YaHei")
+
+    # 动态添加模块与子模块
+    for parent, children in menu_dict.items():
+        if parent == "主菜单":
+            for child in children:
+                dot.node(child, child, shape='rect', fontname="Microsoft YaHei")
+                dot.edge('BE', child)
+        else:
+            dot.node(parent, parent, shape='rect', fontname="Microsoft YaHei")
+            dot.edge('BE', parent)
+            for sub in children:
+                dot.node(sub, sub, shape='rect', fontname="Microsoft YaHei")
+                dot.edge(parent, sub)
+
+    # 渲染
+    diagram_base_path = os.path.join(save_path, "system_architecture")  # 无后缀
+    output_path = dot.render(diagram_base_path, cleanup=True)  # 自动生成 .png 文件
+    print(f"\u2705 系统架构图已生成: {output_path}")  # 直接使用渲染返回的路径
+    return output_path
 
 @require_http_methods(["GET"])
 def getPageInfo(request): # 根据前端返回的当前点击的侧边栏id生成具体的页面代码
@@ -540,6 +597,7 @@ def getPageInfo(request): # 根据前端返回的当前点击的侧边栏id生�
     8. 不要出现与主题色、颜色代码、样式细节、像素占比等相关的描述；
     9. 避免使用“页面整体视觉风格”、“界面美观性”、“卡片边框阴影”等表述；
     10. 若页面代码中包含弹窗，请将弹窗相关功能作为说明的最后一段单独说明。
+    11. 说明文字中必须使用中文标点符号，严禁使用英文标点。
     """
     MESSAGE.append({"role": "user", "content": question})
     try:
@@ -645,6 +703,7 @@ def getPageMain(request):
        6. 请重点描述该页面实现了哪些功能、用户在页面中如何完成具体任务，前后端之间如何协同完成登录流程；
        7. 请避免出现页面配色、字体、大小、渐变、边框阴影等 UI 外观描述；
        8. 请勿撰写任何开发建议、技术扩展、接口设计说明或代码结构的说明；
+       9. 说明文字中必须使用中文标点符号，严禁使用英文标点。
        """
     prompt = f"""现在有一个网页系统叫{platform},请帮其生成一张可以在登陆页面使用的背景图片,图片颜色符合{color_list[0]}的色系，图片内容和{platform}相关，不包含文字"""
 
@@ -800,6 +859,7 @@ def getPageVice(request):
         6. 请围绕注册页面的核心功能展开描述，包括用户填写哪些信息、表单如何提交、验证机制如何、交互流程如何进行等；
         7. 请避免描述与页面外观有关的内容（如颜色、渐变、字体、布局样式等）；
         8. 不要写开发建议、接口说明、组件调用方式等技术实现细节；
+        9. 说明文字中必须使用中文标点符号，严禁使用英文标点。
         """
 
     # 3. 根据同一个全局随机值来决定使用哪一个注册 Prompt
