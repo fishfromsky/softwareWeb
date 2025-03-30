@@ -64,10 +64,8 @@ export default {
         method: 'get',
         params: params
       }).then(res=>{
-        this.index = '1-1'
         this.itemList = res.data.menu
         this.loading = false
-        this.handleMenuChange('1-1')
       })
     }
   },
