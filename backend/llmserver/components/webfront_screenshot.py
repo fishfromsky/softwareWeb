@@ -440,24 +440,19 @@ def main_process(IMAGE_PATH, port, username, datetime):
                 thread_driver.get(f"http://localhost:{port}/")
                 time.sleep(2)
                 
-                # 使用显式等待确保元素可交互
-                wait = WebDriverWait(thread_driver, 10)
-                
                 # 获取菜单元素
-                sidebarItems = wait.until(EC.presence_of_element_located((By.ID, "menu")))
+                sidebarItems = thread_driver.find_element(By.ID, "menu")
                 parent_items = sidebarItems.find_elements(By.CLASS_NAME, "parent-menu")
                 
                 # 直接点击父菜单
                 parent = parent_items[parent_idx-1]
-                wait.until(EC.element_to_be_clickable((By.XPATH, f"(//div[@id='menu']//div[@class='parent-menu'])[{parent_idx}]")))
                 parent.click()
                 time.sleep(1)  # 等待子菜单展开
                 
-                # 重新获取子菜单元素，避免stale element
-                sub_menu_xpath = f"(//div[@id='menu']//div[@class='parent-menu'])[{parent_idx}]/following-sibling::ul//li[{sub_idx}]"
-                sub_item = wait.until(EC.element_to_be_clickable((By.XPATH, sub_menu_xpath)))
+                # 直接点击子菜单
+                sub_menus = parent.find_elements(By.XPATH, ".//following-sibling::ul//li")
+                sub_item = sub_menus[sub_idx-1]
                 sub_item.click()
-                time.sleep(1)  # 等待页面加载
                 
                 # 截图
                 take_screenshot(menu_index, thread_driver, IMAGE_PATH)
