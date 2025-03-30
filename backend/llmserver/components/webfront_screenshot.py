@@ -20,7 +20,12 @@ import re
 from utils import add_multi_level, add_manual, add_pager_header
 import threading
 from natsort import natsorted
-
+import base64
+from PIL import Image, ImageDraw, ImageFont
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import queue
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
@@ -311,6 +316,34 @@ def take_screenshot(index, driver, IMAGE_PATH):
         print(f"[{index}] 截图过程出错:")
         print(f"  - 错误类型: {type(e).__name__}")
         print(f"  - 错误信息: {str(e)}")
+# 创建一个全局线程资源管理器        
+class ThreadResourceManager:
+    _instance = None
+    _lock = threading.Lock()
+    
+    def __new__(cls):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super(ThreadResourceManager, cls).__new__(cls)
+                cls._instance.active_threads = 0
+                cls._instance.max_threads = 6  # 最大并行线程数
+                cls._instance.thread_queue = queue.Queue()
+                cls._instance.thread_lock = threading.Lock()
+            return cls._instance
+    
+    def acquire_thread(self):
+        """获取线程资源"""
+        with self.thread_lock:
+            if self.active_threads < self.max_threads:
+                self.active_threads += 1
+                return True
+            return False
+    
+    def release_thread(self):
+        """释放线程资源"""
+        with self.thread_lock:
+            if self.active_threads > 0:
+                self.active_threads -= 1
 
 
 def main_process(IMAGE_PATH, port, username, datetime):
@@ -347,28 +380,113 @@ def main_process(IMAGE_PATH, port, username, datetime):
     driver.get(f"http://localhost:{port}/")
     take_screenshot("1-1", driver, IMAGE_PATH)
 
-    try:
-        sidebarItems = driver.find_element(By.ID, "menu")
-        parent_items = sidebarItems.find_elements(By.CLASS_NAME, "parent-menu")
-        for index, parent in enumerate(parent_items):
-
-            parent.click()
-            time.sleep(1)  # 等待
-
-            sub_menus = parent.find_elements(By.XPATH, ".//following-sibling::ul//li")
-            for sub_index, sub_item in enumerate(sub_menus):
+        # 收集所有需要处理的菜单项
+        menu_items = []
+        try:
+            sidebarItems = driver.find_element(By.ID, "menu")
+            parent_items = sidebarItems.find_elements(By.CLASS_NAME, "parent-menu")
+            
+            for index, parent in enumerate(parent_items):
+                parent.click()
+                time.sleep(1)  # 等待子菜单展开
+                
+                sub_menus = parent.find_elements(By.XPATH, ".//following-sibling::ul//li")
+                for sub_index, _ in enumerate(sub_menus):
+                    menu_index = f"{index+1}-{sub_index+1}"
+                    if menu_index != "1-1":  # 跳过已处理的首页
+                        menu_items.append((menu_index, index+1, sub_index+1))
+                        
+        except Exception as e:
+            print(f"收集菜单项时出错: {str(e)}")
+            
+    finally:
+        driver.quit()
+    
+    # 使用资源受控的线程池处理菜单项
+    resource_manager = ThreadResourceManager()
+    
+    def process_menu_item(item_info):
+        # 尝试获取线程资源
+        while not resource_manager.acquire_thread():
+            time.sleep(0.5)  # 等待资源释放
+        
+        try:
+            menu_index, parent_idx, sub_idx = item_info
+            
+            # 为每个线程创建独立的浏览器实例
+            thread_id = threading.get_ident()
+            user_path = os.path.join(chrome_user_path, username, datetime, f"thread_{thread_id}")
+            if not os.path.exists(user_path):
+                os.makedirs(user_path)
+                
+            thread_options = webdriver.ChromeOptions()
+            thread_options.binary_location = os.path.join(os.path.dirname(BASE_DIR), "chrome", "chrome.exe")
+            thread_options.add_argument("--disable-application-cache")
+            thread_options.add_argument("--no-sandbox")
+            thread_options.add_argument(f"--user-data-dir={user_path}")
+            thread_options.add_argument("--disable-blink-features=AutomationControlled")
+            thread_options.add_argument("--headless")
+            thread_options.add_argument("--disable-gpu")
+            thread_options.add_argument("--window-size=2580,1562")
+            thread_options.add_argument('--font-cache-shared-handle=0')
+            thread_options.add_argument('--lang=zh-CN')
+            
+            thread_driver = webdriver.Chrome(service=Service(chrome_driver_path), options=thread_options)
+            
+            try:
+                # 访问首页
+                thread_driver.get(f"http://localhost:{port}/")
+                time.sleep(2)
+                
+                # 使用显式等待确保元素可交互
+                wait = WebDriverWait(thread_driver, 10)
+                
+                # 获取菜单元素
+                sidebarItems = wait.until(EC.presence_of_element_located((By.ID, "menu")))
+                parent_items = sidebarItems.find_elements(By.CLASS_NAME, "parent-menu")
+                
+                # 直接点击父菜单
+                parent = parent_items[parent_idx-1]
+                wait.until(EC.element_to_be_clickable((By.XPATH, f"(//div[@id='menu']//div[@class='parent-menu'])[{parent_idx}]")))
+                parent.click()
+                time.sleep(1)  # 等待子菜单展开
+                
+                # 重新获取子菜单元素，避免stale element
+                sub_menu_xpath = f"(//div[@id='menu']//div[@class='parent-menu'])[{parent_idx}]/following-sibling::ul//li[{sub_idx}]"
+                sub_item = wait.until(EC.element_to_be_clickable((By.XPATH, sub_menu_xpath)))
                 sub_item.click()
-                menu_index = str(index+1)+"-"+str(sub_index+1)
-                if menu_index != "1-1":
-                    take_screenshot(menu_index, driver, IMAGE_PATH)
-
-    except Exception as e:
-        print("无法找到侧边栏目录:", e)
-
-    # 关闭浏览器
-    driver.quit()
-
-    shutil.rmtree(user_path)
+                time.sleep(1)  # 等待页面加载
+                
+                # 截图
+                take_screenshot(menu_index, thread_driver, IMAGE_PATH)
+                print(f"✅ 菜单项 {menu_index} 处理完成")
+                
+            except Exception as e:
+                print(f"❌ 处理菜单项 {menu_index} 时出错: {str(e)}")
+                
+            finally:
+                thread_driver.quit()
+                try:
+                    shutil.rmtree(user_path)
+                except:
+                    pass
+        finally:
+            # 释放线程资源
+            resource_manager.release_thread()
+    
+    # 创建线程处理所有菜单项
+    threads = []
+    for item in menu_items:
+        thread = threading.Thread(target=process_menu_item, args=(item,))
+        thread.daemon = True  # 设置为守护线程，不阻塞主程序退出
+        threads.append(thread)
+        thread.start()
+    
+    # 等待所有线程完成，但设置超时时间
+    for thread in threads:
+        thread.join(timeout=600)  # 最多等待10分钟
+    
+    print("所有菜单项处理完成或超时")
 
 
 # 主函数
