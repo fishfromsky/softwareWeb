@@ -934,7 +934,7 @@ def generate_word_template(title, user, time, TXT_PATH):
                 except Exception as e:
                     print(f"添加子图片时出错: {str(e)}")
 
-    add_pager_header(doc, platform)
+    add_pager_header(doc, f"{platform} {version_str}")
 
     doc_save_path = os.path.join(BASE_DIR, "static", user, time, "template_manual.docx")
     doc.save(doc_save_path)

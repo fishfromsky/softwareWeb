@@ -7,6 +7,8 @@ import json
 from tenacity import retry, stop_after_attempt, wait_exponential
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
@@ -75,7 +77,7 @@ def add_manual(section, platform, i, content_dict):
 
 
 # 添加页眉和页码
-def add_pager_header(doc, platform):
+def add_pager_header(doc, header_text):
     section = doc.sections[0]
     header = section.header
 
@@ -85,19 +87,19 @@ def add_pager_header(doc, platform):
         p.getparent().remove(p)
 
     header_paragraph = header.add_paragraph()
-    header_paragraph.add_run(platform)
+    header_paragraph.add_run(header_text)
 
     p_pr = header_paragraph._element.get_or_add_pPr()
     bottom_border = OxmlElement('w:pBdr')
     bottom_border_line = OxmlElement('w:bottom')
     bottom_border_line.set(qn('w:val'), 'single')  # 设置边框样式为单线
-    bottom_border_line.set(qn('w:sz'), '6')  # 设置边框宽度（单位：1/8磅）
-    bottom_border_line.set(qn('w:space'), '1')  # 设置边框与文本的间距
+    bottom_border_line.set(qn('w:sz'), '6')          # 设置边框宽度（单位：1/8磅）
+    bottom_border_line.set(qn('w:space'), '1')       # 设置边框与文本的间距
     bottom_border_line.set(qn('w:color'), '000000')  # 设置边框颜色（黑色）
     bottom_border.append(bottom_border_line)
     p_pr.append(bottom_border)
 
-    header_paragraph.alignment = 0
+    header_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
 
     header_paragraph.add_run().add_tab()
 
@@ -122,6 +124,4 @@ def add_pager_header(doc, platform):
     tab.set(qn('w:val'), 'right')
     tab.set(qn('w:pos'), '9000')
     tabs.append(tab)
-    p_pr = header_paragraph._element.get_or_add_pPr()
     p_pr.append(tabs)
-
