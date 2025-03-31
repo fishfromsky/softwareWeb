@@ -573,7 +573,7 @@ def getPageInfo(request): # 根据前端返回的当前点击的侧边栏id生�
     question = f"""
     请根据你所生成的页面代码，详细介绍该页面的业务功能与使用说明，要求如下：
 
-    1. 回复必须以 ***** 开头；
+    1. 回复必须以 ***** 开头，之后换行开始说明内容；
     2. 页面代码与说明文字之间必须严格使用 ***** 分隔；
     3. 说明部分仅使用文字描述，不得包含任何代码格式（包括 markdown）；
     4. 说明内容格式如下：
@@ -681,10 +681,10 @@ def getPageMain(request):
     question2 = f"""
        请根据你所生成的页面代码，撰写一段流畅自然的文字，详细介绍该页面的核心业务功能和用户使用流程，要求如下：
 
-       1. 回复必须以 ***** 开头；
+       1. 回复必须以 ***** 开头，之后换行开始说明内容；
        2. 说明部分仅使用文字描述，不得包含任何代码格式（包括 markdown、代码片段等）；
        3. 说明内容格式如下：
-       用户登录
+       用户登录(换行)
        {{ 说明文字 }}
        4. 说明必须以一整段连贯文字进行撰写，避免使用编号、条列、分点描述等风格；
        5. 内容不少于 300 字；
@@ -749,6 +749,7 @@ def getPageMain(request):
     messages.append({"role": "assistant", "content": content})
     user_msg = {"role": "user", "content": question2}
     messages.append(user_msg)
+    content+="\n"
     completion = client.chat.completions.create(
         model="qwq-plus-latest",  # 此处以 qwq-32b 为例，可按需更换模型名称
         messages=messages,
@@ -837,10 +838,10 @@ def getPageVice(request):
     question2 = f"""
         请根据你所生成的页面代码，撰写一段自然流畅的文字，介绍该页面的核心业务功能和用户使用流程，要求如下：
 
-        1. 回复必须以 ***** 开头；
+        1. 回复必须以 ***** 开头，之后换行开始说明内容；
         2. 说明部分仅使用文字描述，不得包含任何代码格式（包括 markdown、代码片段等）；
         3. 说明内容格式如下：
-        用户注册
+        用户注册(换行)
         {{ 说明文字 }}
         4. 整体说明需以一段完整、连贯的叙述形式呈现，禁止使用编号、条列或分点描述；
         5. 内容不少于 300 字；
@@ -884,6 +885,7 @@ def getPageVice(request):
     messages.append({"role": "assistant", "content": content})
     user_msg = {"role": "user", "content": question2}
     messages.append(user_msg)
+    content+="\n"
     completion = client.chat.completions.create(
         model="qwq-plus-latest",  # 此处以 qwq-32b 为例，可按需更换模型名称
         messages=messages,
