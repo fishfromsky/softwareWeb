@@ -22,6 +22,7 @@ import threading
 from natsort import natsorted
 import base64
 from PIL import Image, ImageDraw, ImageFont
+from graphviz import Digraph
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import queue
 from selenium.webdriver.support.ui import WebDriverWait
@@ -31,6 +32,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.append(BASE_DIR)
 
 from backend import settings
+
+
+MEDIUM_PATH = os.path.join(BASE_DIR, "medium")
 
 # Vue 项目路径
 vue_project_path = os.path.join(os.path.dirname(BASE_DIR), "webfront")
@@ -661,6 +665,12 @@ def main(username, datetime, IMAGE_PATH, colors):
     # 关闭 Vue 项目
     stop_vue_project(vue_process, port, virtual_vue_path)
 
+    arch_path = generate_architecture_diagram(username, datetime)
+    if arch_path:
+        print(f"架构图已生成")
+    else:
+        print("架构图生成失败！")
+
 
 def read_txt_file(filename):
     """读取txt文件内容"""
@@ -753,7 +763,76 @@ def get_sub_images(file):
     except Exception as e:
         print(f"查找子图片时出错: {str(e)}")
         return []
-  
+
+#生成系统架构图
+def generate_system_architecture_diagram_from_menu(platform_name, save_path, menu_dict):
+    dot = Digraph(comment=f'{platform_name} 系统架构图', format='png')
+    dot.attr(fontname="Microsoft YaHei")  # 支持中文字体
+
+    # 核心结构
+    dot.node('FE', '前端\n(Vue)', shape='box', fontname="Microsoft YaHei")
+    dot.node('BE', '后端\n(Spring Boot)', shape='box', fontname="Microsoft YaHei")
+    dot.node('DB', '数据库\n(MySQL)', shape='cylinder', fontname="Microsoft YaHei")
+    dot.node('EXT', '外部服务\n(预留)', shape='box', fontname="Microsoft YaHei")
+
+    dot.edge('FE', 'BE', label='REST API', fontname="Microsoft YaHei")
+    dot.edge('BE', 'DB', label='数据交互', fontname="Microsoft YaHei")
+    dot.edge('BE', 'EXT', label='预留接口', fontname="Microsoft YaHei")
+
+    # 动态添加模块与子模块
+    for parent, children in menu_dict.items():
+        if parent == "主菜单":
+            for child in children:
+                dot.node(child, child, shape='rect', fontname="Microsoft YaHei")
+                dot.edge('BE', child)
+        else:
+            dot.node(parent, parent, shape='rect', fontname="Microsoft YaHei")
+            dot.edge('BE', parent)
+            for sub in children:
+                dot.node(sub, sub, shape='rect', fontname="Microsoft YaHei")
+                dot.edge(parent, sub)
+
+    # 渲染
+    diagram_base_path = os.path.join(save_path, "system_architecture")  # 无后缀
+    output_path = dot.render(diagram_base_path, cleanup=True)  # 自动生成 .png 文件
+    print(f"\u2705 系统架构图已生成: {output_path}")  # 直接使用渲染返回的路径
+    return output_path
+
+def generate_architecture_diagram(username, datetime_str):
+    # 定义保存路径（和静态资源路径）
+    save_path = os.path.join(BASE_DIR, "static", username, datetime_str)
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+
+    # 读取 config.json 以获取平台名称
+    config_file = os.path.join(MEDIUM_PATH, username, datetime_str, "config.json")
+    try:
+        with open(config_file, "r", encoding="utf-8") as f:
+            config_data = json.load(f)
+        platform = config_data.get("platform", "DefaultPlatform")
+    except Exception as e:
+        print(f"读取配置文件失败: {e}")
+        platform = "DefaultPlatform"
+
+    # 读取 menu.json 获取侧边栏配置信息
+    menu_file = os.path.join(MEDIUM_PATH, username, datetime_str, "menu.json")
+    try:
+        with open(menu_file, "r", encoding="utf-8") as f:
+            menu_config = json.load(f)
+    except Exception as e:
+        print(f"读取菜单配置失败: {e}")
+        menu_config = {}
+
+    # 调用生成系统架构图的函数
+    try:
+        architecture_path = generate_system_architecture_diagram_from_menu(platform, save_path, menu_config)
+        print(f"架构图生成成功，路径：{architecture_path}")
+        return architecture_path
+    except Exception as e:
+        print(f"生成系统架构图失败: {e}")
+        return None
+
+
 def generate_word_template(title, user, time, TXT_PATH):
     doc = Document(os.path.join(BASE_DIR, "medium", "template.docx"))
     version_str = "V1.0"
@@ -960,3 +1039,4 @@ if __name__ == "__main__":
 
     main(username, datetime, IMAGE_PATH, colors)
     generate_word_template(platform, username, datetime, TXT_PATH)
+

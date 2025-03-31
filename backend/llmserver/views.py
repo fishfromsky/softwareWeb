@@ -14,7 +14,6 @@ from pathlib import PurePosixPath
 import requests
 from dashscope import ImageSynthesis
 from urllib.parse import quote
-from graphviz import Digraph
 import os
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.backend.settings")
 from django.conf import settings
@@ -418,39 +417,7 @@ def getMenuConfig(request): # 获取侧边栏信息
     
     return JsonResponse(response)
 
-#生成系统架构图
-def generate_system_architecture_diagram_from_menu(platform_name, save_path, menu_dict):
-    dot = Digraph(comment=f'{platform_name} 系统架构图', format='png')
-    dot.attr(fontname="Microsoft YaHei")  # 支持中文字体
 
-    # 核心结构
-    dot.node('FE', '前端\n(Vue)', shape='box', fontname="Microsoft YaHei")
-    dot.node('BE', '后端\n(Spring Boot)', shape='box', fontname="Microsoft YaHei")
-    dot.node('DB', '数据库\n(MySQL)', shape='cylinder', fontname="Microsoft YaHei")
-    dot.node('EXT', '外部服务\n(预留)', shape='box', fontname="Microsoft YaHei")
-
-    dot.edge('FE', 'BE', label='REST API', fontname="Microsoft YaHei")
-    dot.edge('BE', 'DB', label='数据交互', fontname="Microsoft YaHei")
-    dot.edge('BE', 'EXT', label='预留接口', fontname="Microsoft YaHei")
-
-    # 动态添加模块与子模块
-    for parent, children in menu_dict.items():
-        if parent == "主菜单":
-            for child in children:
-                dot.node(child, child, shape='rect', fontname="Microsoft YaHei")
-                dot.edge('BE', child)
-        else:
-            dot.node(parent, parent, shape='rect', fontname="Microsoft YaHei")
-            dot.edge('BE', parent)
-            for sub in children:
-                dot.node(sub, sub, shape='rect', fontname="Microsoft YaHei")
-                dot.edge(parent, sub)
-
-    # 渲染
-    diagram_base_path = os.path.join(save_path, "system_architecture")  # 无后缀
-    output_path = dot.render(diagram_base_path, cleanup=True)  # 自动生成 .png 文件
-    print(f"\u2705 系统架构图已生成: {output_path}")  # 直接使用渲染返回的路径
-    return output_path
 
 @require_http_methods(["GET"])
 def getPageInfo(request): # 根据前端返回的当前点击的侧边栏id生成具体的页面代码
