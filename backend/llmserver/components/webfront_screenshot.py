@@ -244,13 +244,20 @@ def draw_annotations(image_path, elements):
         # 获取图片尺寸
         img_width, img_height = img.size
         
+        # 直接使用simhei.ttf字体
+        font_size = 26
+        simhei_path = "/usr/share/fonts/simhei.ttf"
+        
         try:
-            number_font = ImageFont.truetype("simhei.ttf", 22)  # 序号字体加大
-            desc_font = ImageFont.truetype("simhei.ttf", 22)    # 说明文字字体加大
-        except:
+            # 加载simhei.ttf字体
+            number_font = ImageFont.truetype(simhei_path, font_size)
+            print(f"成功加载字体: {simhei_path}")
+        except Exception as e:
+            print(f"加载simhei.ttf失败: {str(e)}")
+            # 如果加载失败，使用默认字体
             number_font = ImageFont.load_default()
-            desc_font = ImageFont.load_default()
-            
+                
+        desc_font = number_font  # 使用相同的字体            
         for i, element in enumerate(elements):
             pos = element["position"]
             
