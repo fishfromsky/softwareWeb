@@ -738,7 +738,7 @@ def getPageMain(request):
                 if delta.content != "" and is_answering is False:
                     #print("\n" + "=" * 20 + "完整回复" + "=" * 20 + "\n")
                     is_answering = True
-                #print(delta.content, end='', flush=True)
+                print(delta.content, end='', flush=True)
                 content += delta.content
     txt_path = os.path.join(BASE_DIR, "Introduction", username, datetime)
     if not os.path.exists(txt_path):
