@@ -125,7 +125,7 @@ def first_prompt(software_name, programming_language, txt_file_path, final_path)
     【面向领域/行业】
     【软件的主要功能】
     【软件的技术特点】
-    请注意:【源程序量】后面仅需要填行数
+    请注意:【源程序量】后面仅需要填行数,行数是生成的随机数，范围为50000-60000行。版本号写死为v1.0
     """
 
     messages.append({"role": "user", "content": user_input})
@@ -274,7 +274,7 @@ def merge_word_documents(file_paths, output_path, software_name):
 
                 # 依次去除各种编程语言名称（大小写都考虑）
                 languages = [
-                    "python", "Python", "java", "Java", "javascript", "Javascript", "JavaScript"
+                    "python", "Python", "java", "Java", "Php","php"
                 ]
 
                 for lang in languages:
