@@ -81,8 +81,8 @@ export default {
       options: [
         { value: '1', label: 'Python' },
         { value: '2', label: 'Java' },
-        { value: '3', label: 'C' },
-        { value: '4', label: 'C++' }
+        { value: '3', label: 'php' },
+
       ],
       colorOptions: [
         {
