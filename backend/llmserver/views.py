@@ -664,7 +664,7 @@ def getPageMain(request):
     prompt = f"""现在有一个网页系统叫{platform},请帮其生成一张可以在登陆页面使用的背景图片,图片颜色符合{color_list[0]}的色系，图片内容和{platform}相关，不包含文字"""
 
 
-    print('----sync call, please wait a moment----')
+    #print('----sync call, please wait a moment----')
     rsp = ImageSynthesis.call(
         api_key=api_keynum,
         model="wanx2.0-t2i-turbo",  # 使用较轻量的模型
@@ -672,7 +672,7 @@ def getPageMain(request):
         n=1,
         size='1024*576'  # 降低分辨率到 512*512
     )
-    print('response: %s' % rsp)
+    #print('response: %s' % rsp)
     if rsp.status_code == HTTPStatus.OK:
         for result in rsp.output.results:
             # 创建目录
@@ -697,7 +697,7 @@ def getPageMain(request):
         # QwQ 模型仅支持流式输出方式调用
         stream=True
     )
-    print("\n" + "=" * 20 + "思考过程" + "=" * 20 + "\n")
+    #print("\n" + "=" * 20 + "思考过程" + "=" * 20 + "\n")
     for chunk in completion:
         if not chunk.choices:
             print("\nUsage:")
@@ -738,7 +738,7 @@ def getPageMain(request):
                 if delta.content != "" and is_answering is False:
                     #print("\n" + "=" * 20 + "完整回复" + "=" * 20 + "\n")
                     is_answering = True
-                print(delta.content, end='', flush=True)
+                #print(delta.content, end='', flush=True)
                 content += delta.content
     txt_path = os.path.join(BASE_DIR, "Introduction", username, datetime)
     if not os.path.exists(txt_path):
