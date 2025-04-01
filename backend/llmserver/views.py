@@ -697,7 +697,7 @@ def getPageMain(request):
         # QwQ 模型仅支持流式输出方式调用
         stream=True
     )
-    #print("\n" + "=" * 20 + "思考过程" + "=" * 20 + "\n")
+    print("\n" + "=" * 20 + "思考过程" + "=" * 20 + "\n")
     for chunk in completion:
         if not chunk.choices:
             print("\nUsage:")
