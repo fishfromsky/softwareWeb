@@ -664,7 +664,7 @@ def getPageMain(request):
     prompt = f"""现在有一个网页系统叫{platform},请帮其生成一张可以在登陆页面使用的背景图片,图片颜色符合{color_list[0]}的色系，图片内容和{platform}相关，不包含文字"""
 
 
-    #print('----sync call, please wait a moment----')
+    print('----sync call, please wait a moment----')
     rsp = ImageSynthesis.call(
         api_key=api_keynum,
         model="wanx2.0-t2i-turbo",  # 使用较轻量的模型
@@ -672,7 +672,7 @@ def getPageMain(request):
         n=1,
         size='1024*512'  # 降低分辨率到 512*512
     )
-    #print('response: %s' % rsp)
+    print('response: %s' % rsp)
     if rsp.status_code == HTTPStatus.OK:
         for result in rsp.output.results:
             # 创建目录
