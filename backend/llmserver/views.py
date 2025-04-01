@@ -670,7 +670,7 @@ def getPageMain(request):
         model="wanx2.0-t2i-turbo",  # 使用较轻量的模型
         prompt=prompt,
         n=1,
-        size='1024*512'  # 降低分辨率到 512*512
+        size='1024*576'  # 降低分辨率到 512*512
     )
     print('response: %s' % rsp)
     if rsp.status_code == HTTPStatus.OK:
