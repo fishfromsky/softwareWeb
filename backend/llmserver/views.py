@@ -85,7 +85,7 @@ def get_response(message):
                     if delta.content != "" and is_answering is False:
                         #print("\n" + "=" * 20 + "完整回复" + "=" * 20 + "\n")
                         is_answering = True
-                    #print(delta.content, end='', flush=True)
+                    print(delta.content, end='', flush=True)
                     full_response += delta.content
         return full_response
     except Exception as e:
