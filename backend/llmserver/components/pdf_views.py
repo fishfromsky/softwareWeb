@@ -37,7 +37,7 @@ def extract_and_save_pdf(pdf_file, output_pdf_file, max_pages=60):
                 for i in range(30):
                     writer.add_page(reader.pages[i])
                 # 提取后30页
-                for i in range(total_pages - 30, total_pages-1):
+                for i in range(total_pages - 31, total_pages-1):
                     writer.add_page(reader.pages[i])
 
             else:

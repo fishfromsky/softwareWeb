@@ -31,7 +31,7 @@ client = OpenAI(
     timeout=300
 )
 api_keynum = settings.LLM_API_KEY
-MAX_THREADS = 1
+MAX_THREADS = 3
 WEB_URL = "http://121.196.229.117:8000/static"
 IMG_URL = "http://121.196.229.117/static"
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
