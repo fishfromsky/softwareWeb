@@ -471,77 +471,62 @@ def getPageInfo(request): # 根据前端返回的当前点击的侧边栏id生�
     # 第一次调用：生成页面代码
     MESSAGE = [{"role": "system", "content": "You are a helpful programmer and product manager"}]
     question = f"""
-         现在有一个后台管理系统叫 {platform}，请为侧边栏父目录名称为 {parent_name} 下的 {child_name} 子目录所对应的页面设计 Vue2 版本的 Vue.js 页面代码，满足如下要求：
+    现在有一个后台管理系统叫 {platform}，请为侧边栏父目录名称为 {parent_name} 下的 {child_name} 子目录所对应的页面设计 Vue2 版本的 Vue.js 页面代码，满足如下要求：
 
-     【基本要求，必须遵守】
-     1. 回复必须只包含 Vue 代码，必须以 "<template>" 开头，以 "</script>" 结尾，不要包含任何解释说明。
-     2. 项目基于 Vue2 + Element-UI，禁止出现 Vue3 语法（如 setup、v-slot、#slot、Composition API 等），仅使用 Vue2 标准写法。
-    . 图表部分必须使用全局挂载的 echarts，通过 const chart = this.$echarts.init() 方式直接调用，不允许使用 import 语法，也不允许注册组件。
-     4. 所有组件内部均应包含完整虚拟数据，且每个数据列表需包含 6-8 条真实业务场景示例数据，不从父组件传递 props。
-     5. 表单字段必须分别使用单独变量进行 v-model 绑定，不要使用统一 formData 对象。
-     6. Vue2 要求 template 中只能有一个根节点，请将页面所有内容统一包裹在一个根容器（如 <div>
-     7.页面中的所有按钮中涉及到了新增数据的按钮设置class为add,其余按钮不需要设置class
-     8.设置了class为add的按钮必须绑定一个新增表单
+    【基本要求，必须遵守】
+    1. 回复必须只包含 Vue 代码，必须以 "<template>" 开头，以 "</script>" 结尾，不要包含任何解释说明。
+    2. 项目基于 Vue2 + Element-UI，禁止出现 Vue3 语法（如 setup、v-slot、#slot、Composition API 等），仅使用 Vue2 标准写法。
+   . 图表部分必须使用全局挂载的 echarts，通过 const chart = this.$echarts.init() 方式直接调用，不允许使用 import 语法，也不允许注册组件。
+    4. 所有组件内部均应包含完整虚拟数据，且每个数据列表需包含 6-8 条真实业务场景示例数据，不从父组件传递 props。
+    5. 表单字段必须分别使用单独变量进行 v-model 绑定，不要使用统一 formData 对象。
+    6. Vue2 要求 template 中只能有一个根节点，请将页面所有内容统一包裹在一个根容器（如 <div>
+    7.页面中的所有按钮中涉及到了新增数据的按钮设置class为add,其余按钮不需要设置class
+    8.设置了class为add的按钮必须绑定一个新增表单
 
-     【UI设计与样式要求】
-     1. 页面整体风格需以 {color_list} 作为主题色，包括但不限于按钮背景色、标签颜色、表头颜色、进度条颜色、Tabs 激活色、分隔符颜色等，尽可能多体现主题色，按钮颜色不得使用 element-ui 默认色。
-     2. 所有模块（如表格、图表、搜索栏、统计卡片、Tabs 等）必须包裹在 el-card 组件内，el-card 需设置 shadow="always"，并合理设置 margin 和 padding，卡片边界清晰，阴影突出。
-     3. 页面布局采用 el-row + el-col 组合，统计卡片和图表均需一行放两个，el-col 设置 span=12，保证左右对齐，避免单列堆叠，每个模块宽度统一。
-     4. 表格部分使用 el-table，表头背景色为 {color_list[0]}，不设置固定列宽。表格最后一列包含“编辑”、“删除”、“详情”三个操作按钮，按钮需同行排列，删除按钮带确认提示框，按钮颜色符合主题色 {color_list}。
-     5. 分页使用 el-pagination，右对齐，整体风格统一。
-     6. 顶部搜索栏放置在一个 el-card 内，包含 el-input 输入框、el-select 筛选框、新增按钮，新增按钮 class="add"，样式采用主题色。
+    【UI设计与样式要求】
+    1. 页面整体风格需以 {color_list} 作为主题色，包括但不限于按钮背景色、标签颜色、表头颜色、进度条颜色、Tabs 激活色、分隔符颜色等，尽可能多体现主题色，按钮颜色不得使用 element-ui 默认色。
+    2. 所有模块（如表格、图表、搜索栏、统计卡片、Tabs 等）必须包裹在 el-card 组件内，el-card 需设置 shadow="always"，并合理设置 margin 和 padding，卡片边界清晰，阴影突出。
+    3. 页面布局采用 el-row + el-col 组合，统计卡片和图表均需一行放两个，el-col 设置 span=12，保证左右对齐，避免单列堆叠，每个模块宽度统一。
+    4. 表格部分使用 el-table，表头背景色为 {color_list[0]}，不设置固定列宽。表格最后一列包含“编辑”、“删除”、“详情”三个操作按钮，按钮需同行排列，删除按钮带确认提示框，按钮颜色符合主题色 {color_list}。
+    5. 分页使用 el-pagination，右对齐，整体风格统一。
+    6. 顶部搜索栏放置在一个 el-card 内，包含 el-input 输入框、el-select 筛选框、新增按钮，新增按钮 class="add"，样式采用主题色。
 
-             【核心样式规范（必须严格遵守）】
-         1. Element-UI 按钮类型与颜色绑定规则：
-            - primary 类型按钮必须使用 {color_list[0]} 作为背景色
-            - success 类型按钮必须使用 {color_list[2]} 作为背景色
-            - info 类型按钮必须使用 {color_list[2]} 作为背景色
-            - warning 类型按钮必须使用 {color_list[3]} 作为背景色
-            - danger 类型按钮必须使用 {color_list[3]} 作为背景色
-         2. 所有 el-table 表头背景色必须固定为 {color_list[0]}，使用 header-cell-style 属性设置
+    【图表特别要求】
+    1. 图表必须通过 this.$echarts.init() 直接调用，不得 import 或注册组件。
+    2. 每个图表的 option 配置，需完整手动设置 `type`、`data`、`radius` 等属性，**确保不会出现 series 被覆盖或数据丢失问题**。
+    3. 图表内容用真实业务数据构造，禁止空数据，且务必放置在 el-card 中展示，保持美观。
 
-         【样式布局要求】
-         1. 全局样式注入（需在<style>中添加）：
-            .el-button--primary {{ background-color: {color_list[0]} !important; }}
-            .el-button--success {{ background-color: {color_list[2]} !important; }}
-            /* 其他按钮类型同理... */
+    【组件丰富性要求】
+    每个页面需合理引入至少 4 种以上 Element-UI 组件，提升页面交互性与美观性，颜色均符合主题色 {color_list}，组件包括但不限于：
+    - el-tabs 选项卡
+    - el-tag 标签
+    - el-switch 开关
+    - el-progress 进度条
+    - el-divider 分隔符
+    - el-avatar 头像
+    - el-tooltip 提示
+    - el-breadcrumb 面包屑
+    - el-collapse 折叠面板
+    - el-alert 提示信息
 
-            .el-table th {{ background-color: {color_list[0]} !important; }}
+    【差异化要求】
+    1. 主页页面必须包含至少一张 ECharts 图表，且布局与其他页面不同。
+    2. 其他页面根据 {child_name} 业务内容，自行合理布局，禁止与主页完全相同，确保结构和数据内容有差异。
+    3. 所有示例数据必须体现真实业务场景，如用户管理应包含姓名、角色、手机号、状态等字段，订单管理应体现订单编号、金额、时间、状态等。
 
-     【图表特别要求】
-     1. 图表必须通过 this.$echarts.init() 直接调用，不得 import 或注册组件。
-     2. 每个图表的 option 配置，需完整手动设置 `type`、`data`、`radius` 等属性，**确保不会出现 series 被覆盖或数据丢失问题**。
-     3. 图表内容用真实业务数据构造，禁止空数据，且务必放置在 el-card 中展示，保持美观。
+   【弹窗要求】
+     可以打开新增弹窗表单的按钮设置class为add，其余按钮不需要设置class。
+     表单不设置title属性
+    1. 弹窗包括自定义头部，新增表单和操作按钮 
+    2. 弹窗的自定义头部，内容为新增XXX，设置slot="title"，覆盖本身标题,背景色必须设置为{color_list[0]}，自定义头部文字居中，
+    3. 新增数据弹窗的表单需包含至少三个字段，字段类型覆盖文本输入、数字输入、下拉选择等，字段最好和页面表格对应
+    4. 弹窗内必须包含“取消”和“确定”两个按钮，取消按钮 class="cancel"，点击取消关闭弹窗，操作按钮要符合主题色{color_list}色系中较为柔和的颜色
+    5. 弹窗需出现在屏幕正中央，align-center 为 true，弹窗宽度为屏幕宽度的 30%。
 
-     【组件丰富性要求】
-     每个页面需合理引入至少 4 种以上 Element-UI 组件，提升页面交互性与美观性，颜色均符合主题色 {color_list}，组件包括但不限于：
-     - el-tabs 选项卡
-     - el-tag 标签
-     - el-switch 开关
-     - el-progress 进度条
-     - el-divider 分隔符
-     - el-avatar 头像
-     - el-tooltip 提示
-     - el-breadcrumb 面包屑
-     - el-collapse 折叠面板
-     - el-alert 提示信息
+    【已有模板提示】
+    此外，我们已有以下组件模板：{all_components_code}，你可以直接复制模板中的代码来复用，但禁止使用 import 语法，也不要直接注册组件调用。
+    """
 
-     【差异化要求】
-     1. 主页页面必须包含至少一张 ECharts 图表，且布局与其他页面不同。
-     2. 其他页面根据 {child_name} 业务内容，自行合理布局，禁止与主页完全相同，确保结构和数据内容有差异。
-     3. 所有示例数据必须体现真实业务场景，如用户管理应包含姓名、角色、手机号、状态等字段，订单管理应体现订单编号、金额、时间、状态等。
-
-     【表单要求】
-     可以打开新增表单的按钮设置class为add，其余按钮不需要设置class。
-     1. 弹窗需要顶部：新增XXX,表单的顶部头部背景色必须设置为{color_list[0]},且填满头部
-     2. 新增或编辑数据弹窗表单需包含至少三个字段，字段类型覆盖文本输入、数字输入、下拉选择等，字段分别绑定到单独变量。
-     3. 弹窗内必须包含“取消”和“确定”两个按钮，取消按钮 class="cancel"，点击取消关闭弹窗，
-     4. 弹窗需出现在屏幕正中央，水平垂直居中显示，弹窗宽度为屏幕宽度的 30%。
-     5. 表单内元素要符合主题色{color_list}色系中较为柔和的颜色
-
-     【已有模板提示】
-     此外，我们已有以下组件模板：{all_components_code}，你可以直接复制模板中的代码来复用，但禁止使用 import 语法，也不要直接注册组件调用。
-         """
     MESSAGE.append({"role": "user", "content": question})
 
 
@@ -671,7 +656,7 @@ def getPageMain(request):
        用户登录(换行)
        {{ 说明文字 }}
        4. 说明必须以一整段连贯文字进行撰写，避免使用编号、条列、分点描述等风格；
-       5. 内容字数请在200-300字内；
+       5. 内容字数请在200字内；
        6. 请重点描述该页面实现了哪些功能、用户在页面中如何完成具体任务，前后端之间如何协同完成登录流程；
        7. 请避免出现页面配色、字体、大小、渐变、边框阴影等 UI 外观描述；
        8. 请勿撰写任何开发建议、技术扩展、接口设计说明或代码结构的说明；
@@ -828,7 +813,7 @@ def getPageVice(request):
         用户注册(换行)
         {{ 说明文字 }}
         4. 整体说明需以一段完整、连贯的叙述形式呈现，禁止使用编号、条列或分点描述；
-        5. 内容字数请在200-300字内；
+        5. 内容字数请在200字内；
         6. 请围绕注册页面的核心功能展开描述，包括用户填写哪些信息、表单如何提交、验证机制如何、交互流程如何进行等；
         7. 请避免描述与页面外观有关的内容（如颜色、渐变、字体、布局样式等）；
         8. 不要写开发建议、接口说明、组件调用方式等技术实现细节；
