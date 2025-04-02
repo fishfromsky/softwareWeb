@@ -120,11 +120,11 @@ export default {
     representColor: '#E91E63',
     colors: ['#E91E63', '#F06292', '#F48FB1', '#F8BBD0']
   },
-{
-  label: '棕色系',
-  representColor: '#795548',
-  colors: ['#4E342E', '#5D4037', '#6D4C41', '#8D6E63']
-}
+  {
+    label: '棕色系',
+    representColor: '#795548',
+    colors: ['#4E342E', '#5D4037', '#6D4C41', '#8D6E63']
+  },
   {
     label: '靛青系',
     representColor: '#009688',
