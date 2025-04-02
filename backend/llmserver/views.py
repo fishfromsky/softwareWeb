@@ -85,7 +85,7 @@ def get_response(message):
                     if delta.content != "" and is_answering is False:
                         #print("\n" + "=" * 20 + "完整回复" + "=" * 20 + "\n")
                         is_answering = True
-                    print(delta.content, end='', flush=True)
+                    #print(delta.content, end='', flush=True)
                     full_response += delta.content
         return full_response
     except Exception as e:
@@ -495,8 +495,8 @@ def getPageInfo(request): # 根据前端返回的当前点击的侧边栏id生�
         1. 全局样式注入（需在 <style> 中添加）：
            .el-table th {{ background-color: {color_list[0]} !important; }}
         2. 表格所在区域必须用 div 容器包裹，并设置 style="overflow-x: auto"，避免表格列过多导致内容溢出不可见。
-        3. 所有 el-table 设置 style="width: 100%;"，表格内容较多时建议设置 table-layout="fixed"。
-        4. 表格的按钮列必须设置 width，按钮在一行内横向排列，使用 el-button-group 或行内展示。
+        3. 所有 el-table 设置 style="width: 100%;"，建议开启 table-layout="auto"，让列宽根据内容自动撑开，仅操作按钮列设置固定宽度。
+        4. 表格的“操作”按钮列必须设置 width="240"，其他所有 el-table-column 禁止设置 width，避免表格不能自适应满铺。
 
         【图表要求】
         1. 图表必须通过 this.$echarts.init() 初始化，禁止 import。
@@ -521,18 +521,14 @@ def getPageInfo(request): # 根据前端返回的当前点击的侧边栏id生�
         3. 新增数据弹窗的表单需包含至少三个字段，字段类型覆盖文本输入、数字输入、下拉选择等，字段最好和页面表格对应
         4. 弹窗内必须包含“取消”和“确定”两个按钮，取消按钮 class="cancel"，点击取消关闭弹窗，操作按钮要符合主题色{color_list}色系中较为柔和的颜色
         5. 弹窗需出现在屏幕正中央，align-center 为 true，弹窗宽度为屏幕宽度的 30%。
-
-        【表单布局优化】
-        1. 所有 el-form-item 必须设置 label-width="100px"；
-        2. 若某一行仅包含一个 el-form-item 表单项，必须使用 el-row + el-col :span="24" 包裹，并设置 el-input / el-select 等元素 style="width: 100%"，确保其横向满铺；
-        3. 禁止表单项左靠右空，必须通过布局控制实现每行表单项内容居中或撑满；
-        4. 所有 el-form 项均应采用 el-form + el-row + el-col 组合结构，避免出现错位、堆叠或留白问题；
         
         【已知 Bug 避免规则】
         1. el-table 表格必须设置 style="width: 100%;"，外层包裹 div 设置 style="overflow-x: auto;"。
         2. 操作按钮列使用 el-table-column width="240"，确保“编辑/删除/详情”按钮一行展示，禁止换行。
         3. 所有 el-card 外层容器需设置 margin/padding，避免表格压边显示异常。
         4. 弹窗需使用 align-center，且 :width="'30%'"，防止弹窗偏移或过宽，按钮保持一行横向排列。
+        5. 所有 el-table-column 禁止设置固定 width，除了“操作列”；确保表格能自适应撑满表格区域。
+
 
         【已有模板提示】
         已有以下组件模板：{all_components_code}，你可以直接复制模板中的代码来复用，但禁止使用 import 语法，也不要直接注册组件调用。
