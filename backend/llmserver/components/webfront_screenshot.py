@@ -309,10 +309,10 @@ def analyze_page_elements(driver, client):
     viewport_height = driver.execute_script("return document.documentElement.clientHeight")
     
     selectors = {
-        "表格": ".el-table",
-        "表单": "form",
-        "功能按钮": ".el-button:not(.el-table *)",
-    }
+    "表格": ".el-table",
+    "表单": "form",
+    "功能按钮": ".el-button:not(.el-table *):not(.el-dialog *)",
+}
     
     for element_type, selector in selectors.items():
         elements = driver.find_elements(By.CSS_SELECTOR, selector)
