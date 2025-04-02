@@ -278,7 +278,7 @@ def draw_annotations(image_path, elements):
             
             # 在框的左上角添加序号
             draw.text(
-                (x-10, max(0, y - 25)),
+                (x-10, max(0, y )),
                 str(i + 1),
                 fill="red",
                 font=number_font
