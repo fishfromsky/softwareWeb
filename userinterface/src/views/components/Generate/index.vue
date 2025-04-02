@@ -85,57 +85,57 @@ export default {
 
       ],
       colorOptions: [
-        {
-          label: '红色系',
-          representColor: '#FF4444',
-           colors: ['#FF4444','#F44336','#FF6666','#FFA8A8']
-        },
-        {
-          label: '蓝色系',
-          representColor: '#3F51B5',
-          colors: ['#3F51B5', '#2196F3', '#03A9F4', '#00BCD4']
-        },
-        {
-          label: '绿色系',
-          representColor: '#4CAF50',
-          colors: ['#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B']
-        },
-        {
-          label: '橙色系',
-          representColor: '#FFC107',
-          colors: ['#FFC107', '#FF9800', '#FF5722', '#795548']
-        },
-        {
-          label: '灰色系',
-          representColor: '#607D8B',
-          colors: ['#607D8B', '#9E9E9E', '#BDBDBD', '#E0E0E0']
-        },
-        {
-          label: '紫色系',
-          representColor: '#9C27B0',
-          colors: ['#9C27B0', '#8E24AA', '#7B1FA2', '#6A1B9A']
-        },
-        {
-          label: '粉色系',
-          representColor: '#E91E63',
-          colors: ['#E91E63', '#F06292', '#F48FB1', '#F8BBD0']
-        },
-        {
-          label: '棕色系',
-          representColor: '#795548',
-          colors: ['#795548', '#6D4C41', '#5D4037', '#4E342E']
-        },
-        {
-          label: '靛青系',
-          representColor: '#009688',
-          colors: ['#009688', '#26A69A', '#80CBC4', '#B2DFDB']
-        },
-        {
-          label: '黑白系',
-          representColor: '#000000',
-          colors: ['#000000', '#444444', '#888888', '#FFFFFF']
-        }
-      ],
+  {
+    label: '红色系',
+    representColor: '#FF4444',
+    colors: ['#F44336', '#FF4444', '#FF6666', '#FFA8A8']
+  },
+  {
+    label: '蓝色系',
+    representColor: '#3F51B5',
+    colors: ['#3F51B5', '#2196F3', '#03A9F4', '#00BCD4']
+  },
+  {
+    label: '绿色系',
+    representColor: '#4CAF50',
+    colors: ['#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B']
+  },
+  {
+    label: '橙色系',
+    representColor: '#FFC107',
+    colors: ['#795548', '#FF5722', '#FF9800', '#FFC107']
+  },
+  {
+    label: '灰色系',
+    representColor: '#607D8B',
+    colors: ['#607D8B', '#9E9E9E', '#BDBDBD', '#E0E0E0']
+  },
+  {
+    label: '紫色系',
+    representColor: '#9C27B0',
+    colors: ['#6A1B9A', '#7B1FA2', '#8E24AA', '#9C27B0']
+  },
+  {
+    label: '粉色系',
+    representColor: '#E91E63',
+    colors: ['#E91E63', '#F06292', '#F48FB1', '#F8BBD0']
+  },
+{
+  label: '棕色系',
+  representColor: '#795548',
+  colors: ['#4E342E', '#5D4037', '#6D4C41', '#8D6E63']
+}
+  {
+    label: '靛青系',
+    representColor: '#009688',
+    colors: ['#009688', '#26A69A', '#80CBC4', '#B2DFDB']
+  },
+  {
+    label: '黑白系',
+    representColor: '#000000',
+    colors: ['#000000', '#444444', '#888888', '#FFFFFF']
+  }
+],
       form: {
         name: '',
         language: '',

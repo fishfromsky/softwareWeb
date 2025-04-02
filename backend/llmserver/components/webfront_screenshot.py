@@ -202,28 +202,23 @@ def stop_vue_project(process, port, virtual_vue_path):
     shutil.rmtree(virtual_vue_path)
     print("Vue 项目已关闭。")
 
-
-@retry(stop=stop_after_attempt(10), wait=wait_exponential(multiplier=1, min=2, max=20))
 def generate_config(PLATFORM, username, datetime):
     try:
         with open(os.path.join(BASE_DIR, "medium", username, datetime, "menu.json"), "r", encoding="utf-8") as f:
             menu = json.load(f)
-            f.close()
         json_str = json.dumps(menu, ensure_ascii=False)
         MESSAGE = [{"role": "system", "content": "You are a helpful programmer and product manager"}]
         question = f"""
-        现在有一个名为{PLATFORM}的后台管理系统，其侧边栏为{json_str}，请为其设计如下的一些配置信息：
+        现在有一个名为{PLATFORM}的后台管理系统，其侧边栏为{json_str}，请为其设计如下的配置信息：
 
-        1. "开发硬件环境"：包括处理器、内存、硬盘、显卡等配置信息，不同配置信息之间通过分号标点隔开，以句号结束。
-        2. "运行硬件环境"：包括处理器、内存、硬盘、带宽等配置信息，不同配置信息之间通过分号标点隔开，以句号结束。
-        3. "开发目的"：确保生成“开发目的”的文字信息不少于300字。
-        4. "功能描述"：对侧边栏每个父目录及其子目录进行一句话功能描述。
-        5. "功能描述"内容以嵌套Object形式返回，第一层的每一个Key是父目录名称，Value是一个子Object，它的每一个Key是子目录名称，value是对应的功能描述。
-        6. "功能描述"的Object中的每一个子Object的每一个键值对之间必须以英文逗号“,”分隔，禁止使用分号。
-        7. 所有Object的Key必须使用双引号引起来。
-        8. 生成的所有配置信息为纯文字说明，不需要换行。
-        9. 返回内容为一个JSON格式的Object，以“{{”开头，“}}”结尾，中间不要插入任何解释或说明。
-
+        1. "系统简介"：包括系统的背景、开发目的、设计理念以及一些代码实现说明，请确保文字说明详细且不少于500字，覆盖代码中的关键实现细节。
+        2. "功能描述"：对侧边栏每个父目录及其子目录进行一句话功能描述。
+        3. "功能描述"内容以嵌套Object形式返回，第一层的每个Key为父目录名称，Value是一个子Object，该子Object中每个Key为子目录名称，value为对应的功能描述。
+        4. "功能描述"的Object中的每个子Object的每个键值对之间必须以英文逗号“,”分隔，禁止使用分号。
+        5. 所有Object的Key必须使用双引号引起来。
+        6. 生成的所有配置信息为纯文字说明，不需要换行。
+        7. 返回内容为一个JSON格式的Object，以“{{”开头，“}}”结尾，中间不要插入任何解释或说明。
+        
         ### 请从这里开始生成配置内容 ###
         """
         query = {"role": "user", "content": question}
@@ -238,6 +233,7 @@ def generate_config(PLATFORM, username, datetime):
         return content
     except Exception as e:
         raise e
+
 
 def draw_annotations(image_path, elements):
     """使用百分比位置绘制标注"""
@@ -840,9 +836,9 @@ def generate_word_template(title, user, time, TXT_PATH):
         "title": title,
         "table": [{"version": version_str, "date": time, "name": user, "info": "初始版本"}]
     }
+    # 去掉“环境描述”，将“开发目的”修改为“系统简介”
     config = [
-        {"name": "环境描述", "subsection": []},
-        {"name": "开发目的", "content": ""},
+        {"name": "系统简介", "content": ""},
         {"name": "功能描述", "content": ""}
     ]
     main_content = {"title": "使用说明", "subsection": []}
@@ -860,30 +856,32 @@ def generate_word_template(title, user, time, TXT_PATH):
     for paragraph in doc.paragraphs:
         if "{{ title }}" in paragraph.text:
             paragraph.clear()
+            # 添加标题（标题部分采用一号字）
             run1 = paragraph.add_run(f"{title} {version_str}")
             run1.bold = True
             run1.font.name = "黑体"
-            run1.font.size = Pt(45)
+            run1.font.size = Pt(42)  # 调整为一号字
 
-            run2 = paragraph.add_run("\n操作手册")
+            # 添加换行（两个换行符，中间空一行）
+            paragraph.add_run("\n")
+            paragraph.add_run("\n")
+
+            # 添加“操作手册”文字
+            run2 = paragraph.add_run("操作手册")
             run2.bold = True
             run2.font.name = "黑体"
             run2.font.size = Pt(40)
 
+            # 设置居中及行间距为双倍行距
             paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            paragraph.paragraph_format.line_spacing = 2
             break
 
     # 生成配置信息
     config_content = generate_config(title, user, time)
 
-    for i, key in enumerate(config_content.keys()):
-        if i < 2:
-            config[0]["subsection"].append({
-                "name": key,
-                "content": config_content[key]
-            })
-        else:
-            config[i-1]["content"] = config_content[key]
+    config[0]["content"] = config_content.get("系统简介", "")
+    config[1]["content"] = config_content.get("功能描述", "")
 
     # 作者信息写入表格
     table = doc.tables[0]
@@ -923,63 +921,43 @@ def generate_word_template(title, user, time, TXT_PATH):
     except Exception as e:
         print(f"插入系统架构图失败: {e}")
 
-        # 读取 TXT 并插入对应图片
+    # 读取 TXT 并插入对应图片
     files = natsorted(os.listdir(TXT_PATH))
     for file in files:
         filename = os.path.join(TXT_PATH, file)
         context = read_txt_file(filename)
 
-            # 获取主图片
+        # 获取主图片
         image = get_image_info(file)
         if image:
             context["image"] = image
 
-             # 获取子图片
+            # 获取子图片
             sub_images = get_sub_images(file)
             if sub_images:
-                 context["sub_images"] = sub_images
+                context["sub_images"] = sub_images
 
             main_content["subsection"].append(context)
         else:
-             print(f"跳过 {file} 的处理，因为没有找到对应的图片")
+            print(f"跳过 {file} 的处理，因为没有找到对应的图片")
 
-   
     doc.add_page_break()
     doc.add_heading(main_content["title"], level=1)
-    # image_number = len(main_content["subsection"])
-    # for i, section in enumerate(main_content["subsection"]):
-    #     image_dict[str(i)] = section["image"]
-    #     title_dict[str(i)] = section["name"]
-    #     thread = threading.Thread(target=add_manual, args=(section, platform, i, content_dict))
-    #     thread_pool.append(thread)
-    #
-    # for thr in thread_pool:
-    #     thr.start()
-    #
-    # for thr in thread_pool:
-    #     thr.join()
-    #
-    # for key in range(image_number):
-    #     doc.add_heading(title_dict[str(key)], level=2)
-    #     paragraph = doc.add_paragraph()
-    #     paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-    #     paragraph.add_run().add_picture(image_dict[str(key)], width=Inches(5.5))
-    #     doc.add_paragraph(content_dict[str(key)])
 
     for section in main_content["subsection"]:
         # 添加标题
         doc.add_heading(section["name"], level=2)
-        
+
         # 1. 添加主图片 - 优先使用标注版本
         if "image" in section and section["image"]:
             paragraph = doc.add_paragraph()
             paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-            
+
             # 检查是否存在标注版本
             image_path = section["image"]
             name, ext = os.path.splitext(image_path)
             annotated_path = f"{name}_annotated{ext}"
-            
+
             try:
                 if os.path.exists(annotated_path):
                     paragraph.add_run().add_picture(annotated_path, width=Inches(5.5))
@@ -989,20 +967,20 @@ def generate_word_template(title, user, time, TXT_PATH):
                     print(f"使用原始图片: {image_path}")
             except Exception as e:
                 print(f"添加图片时出错: {str(e)}")
-        
+
         # 2. 添加内容描述
         doc.add_paragraph(section["content"])
-                
+
         # 3. 添加子图片 - 同样优先使用标注版本
         if "sub_images" in section:
             for sub_image in section["sub_images"]:
                 paragraph = doc.add_paragraph()
                 paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-                
+
                 # 检查是否存在标注版本
                 name, ext = os.path.splitext(sub_image)
                 annotated_sub_path = f"{name}_annotated{ext}"
-                
+
                 try:
                     if os.path.exists(annotated_sub_path):
                         paragraph.add_run().add_picture(annotated_sub_path, width=Inches(5.5))
