@@ -247,7 +247,7 @@ def draw_annotations(image_path, elements):
         img_width, img_height = img.size
         
         # 直接使用simhei.ttf字体
-        font_size = 26
+        font_size =30
         simhei_path = "/usr/share/fonts/simhei.ttf"
         
         try:
