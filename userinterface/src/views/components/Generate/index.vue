@@ -98,7 +98,7 @@ export default {
   {
     label: '绿色系',
     representColor: '#4CAF50',
-    colors: ['#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B']
+    colors: ['#1B5E20', '#388E3C', '#4CAF50', '#81C784', '#C8E6C9']
   },
   {
     label: '橙色系',
@@ -107,13 +107,13 @@ export default {
   },
   {
     label: '灰色系',
-    representColor: '#607D8B',
-    colors: ['#607D8B', '#9E9E9E', '#BDBDBD', '#E0E0E0']
+    representColor: '#455A64',
+    colors: ['#455A64', '#9E9E9E', '#BDBDBD', '#E0E0E0']
   },
   {
     label: '紫色系',
     representColor: '#9C27B0',
-    colors: ['#6A1B9A', '#7B1FA2', '#8E24AA', '#9C27B0']
+    colors: ['#6A1B9A', '#7B1FA2', '#8E24AA', '#BA68C8']
   },
   {
     label: '粉色系',

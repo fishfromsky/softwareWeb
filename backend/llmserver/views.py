@@ -476,43 +476,39 @@ def getPageInfo(request): # 根据前端返回的当前点击的侧边栏id生�
     【基本要求，必须遵守】
     1. 回复必须只包含 Vue 代码，必须以 "<template>" 开头，以 "</script>" 结尾，不要包含任何解释说明。
     2. 项目基于 Vue2 + Element-UI，禁止出现 Vue3 语法（如 setup、v-slot、#slot、Composition API 等），仅使用 Vue2 标准写法。
-   . 图表部分必须使用全局挂载的 echarts，通过 const chart = this.$echarts.init() 方式直接调用，不允许使用 import 语法，也不允许注册组件。
+    3. 图表部分必须使用全局挂载的 echarts，通过 const chart = this.$echarts.init() 方式直接调用，不允许使用 import 语法，也不允许注册组件。
     4. 所有组件内部均应包含完整虚拟数据，且每个数据列表需包含 6-8 条真实业务场景示例数据，不从父组件传递 props。
     5. 表单字段必须分别使用单独变量进行 v-model 绑定，不要使用统一 formData 对象。
-    6. Vue2 要求 template 中只能有一个根节点，请将页面所有内容统一包裹在一个根容器（如 <div>
-    7.页面中的所有按钮中涉及到了新增数据的按钮设置class为add,其余按钮不需要设置class
-    8.设置了class为add的按钮必须绑定一个新增表单
+    6. Vue2 要求 template 中只能有一个根节点，请将页面所有内容统一包裹在一个根容器（如 <div>）。
+    7. 页面中的所有按钮统一使用 Element-UI 默认样式，不需设置颜色，新增按钮需设置 class="add"，并绑定新增表单。
+    8. el-table 表格的最后一列必须设置固定宽度（建议 width: 240px），确保“编辑”、“删除”、“详情”三个按钮在一行内横向并排展示，不得出现换行或错位现象。
 
     【UI设计与样式要求】
-    1. 页面整体风格需以 {color_list} 作为主题色，包括但不限于按钮背景色、标签颜色、表头颜色、进度条颜色、Tabs 激活色、分隔符颜色等，尽可能多体现主题色，按钮颜色不得使用 element-ui 默认色。
-    2. 所有模块（如表格、图表、搜索栏、统计卡片、Tabs 等）必须包裹在 el-card 组件内，el-card 需设置 shadow="always"，并合理设置 margin 和 padding，卡片边界清晰，阴影突出。
-    3. 页面布局采用 el-row + el-col 组合，统计卡片和图表均需一行放两个，el-col 设置 span=12，保证左右对齐，避免单列堆叠，每个模块宽度统一。
-    4. 表格部分使用 el-table，表头背景色为 {color_list[0]}，不设置固定列宽。表格最后一列包含“编辑”、“删除”、“详情”三个操作按钮，按钮需同行排列，删除按钮带确认提示框，按钮颜色符合主题色 {color_list}。
-    5. 分页使用 el-pagination，右对齐，整体风格统一。
-    6. 顶部搜索栏放置在一个 el-card 内，包含 el-input 输入框、el-select 筛选框、新增按钮，新增按钮 class="add"，样式采用主题色。
+    1. 页面整体主题色为 {color_list}，在非按钮样式中尽可能多体现该色系，例如表头颜色、标签、进度条、Tabs 等，但按钮组件不需要设置颜色，保留 Element-UI 原本 type 的颜色。
+    2. 所有模块（如表格、图表、搜索栏、统计卡片、Tabs 等）必须包裹在 el-card 组件内，el-card 设置 shadow="always"，并设置合理 margin 和 padding。
+    3. 页面布局采用 el-row + el-col 组合，统计卡片和图表均一行两个，el-col 设置 span=12，避免单列堆叠。
+    4. 表格使用 el-table，表头背景色必须为 {color_list[0]}，通过 header-cell-style 设置。表格最后一列包含“编辑”、“删除”、“详情”三个操作按钮，按钮需在一行排列，删除按钮带确认提示框，整个操作列必须通过设置 width 固定宽度，避免按钮换行。
+    5. 分页使用 el-pagination，右对齐，风格统一。
+    6. 顶部搜索栏用 el-card 包裹，包含 el-input、el-select 和 class="add" 的新增按钮。
 
-    【图表特别要求】
-    1. 图表必须通过 this.$echarts.init() 直接调用，不得 import 或注册组件。
-    2. 每个图表的 option 配置，需完整手动设置 `type`、`data`、`radius` 等属性，**确保不会出现 series 被覆盖或数据丢失问题**。
-    3. 图表内容用真实业务数据构造，禁止空数据，且务必放置在 el-card 中展示，保持美观。
+    【样式布局要求】
+    1. 全局样式注入（需在 <style> 中添加）：
+       .el-table th {{ background-color: {color_list[0]} !important; }}
+
+   【图表要求】
+    1. 图表必须通过 this.$echarts.init() 初始化，禁止 import。
+    2. 配置项必须完整，series 内必须包含 type、data、radius 等，禁止空图。
+    3. 图表必须包含真实业务数据，放置在 el-card 中展示，布局合理美观。
+    4. 所有图表的颜色（如 series 中的 itemStyle.color、lineStyle.color、bar 的柱状图颜色等），必须从{color_list}中选取颜色值，不能使用默认配色或其他色系。
 
     【组件丰富性要求】
-    每个页面需合理引入至少 4 种以上 Element-UI 组件，提升页面交互性与美观性，颜色均符合主题色 {color_list}，组件包括但不限于：
-    - el-tabs 选项卡
-    - el-tag 标签
-    - el-switch 开关
-    - el-progress 进度条
-    - el-divider 分隔符
-    - el-avatar 头像
-    - el-tooltip 提示
-    - el-breadcrumb 面包屑
-    - el-collapse 折叠面板
-    - el-alert 提示信息
+    页面需合理引入至少 4 种 Element-UI 组件，颜色和样式统一，组件包括但不限于：
+    - el-tabs、el-tag、el-switch、el-progress、el-divider、el-avatar、el-tooltip、el-breadcrumb、el-collapse、el-alert 等。
 
     【差异化要求】
-    1. 主页页面必须包含至少一张 ECharts 图表，且布局与其他页面不同。
-    2. 其他页面根据 {child_name} 业务内容，自行合理布局，禁止与主页完全相同，确保结构和数据内容有差异。
-    3. 所有示例数据必须体现真实业务场景，如用户管理应包含姓名、角色、手机号、状态等字段，订单管理应体现订单编号、金额、时间、状态等。
+    1. 主页页面必须包含至少一个 ECharts 图表，且布局与其他页面不同。
+    2. 非主页页面需根据 {child_name} 的业务内容，自行设计布局，避免模板化。
+    3. 示例数据必须真实可信，用户管理应有姓名、角色、手机号等字段，订单管理应有编号、金额、时间等信息。
 
    【弹窗要求】
      可以打开新增弹窗表单的按钮设置class为add，其余按钮不需要设置class。
@@ -522,9 +518,8 @@ def getPageInfo(request): # 根据前端返回的当前点击的侧边栏id生�
     3. 新增数据弹窗的表单需包含至少三个字段，字段类型覆盖文本输入、数字输入、下拉选择等，字段最好和页面表格对应
     4. 弹窗内必须包含“取消”和“确定”两个按钮，取消按钮 class="cancel"，点击取消关闭弹窗，操作按钮要符合主题色{color_list}色系中较为柔和的颜色
     5. 弹窗需出现在屏幕正中央，align-center 为 true，弹窗宽度为屏幕宽度的 30%。
-
     【已有模板提示】
-    此外，我们已有以下组件模板：{all_components_code}，你可以直接复制模板中的代码来复用，但禁止使用 import 语法，也不要直接注册组件调用。
+    已有以下组件模板：{all_components_code}，你可以直接复制模板中的代码来复用，但禁止使用 import 语法，也不要直接注册组件调用。
     """
 
     MESSAGE.append({"role": "user", "content": question})

@@ -13,6 +13,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from openai import OpenAI
 from docx.shared import Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.shared import Cm
 import json
 import sys
 import shutil
@@ -211,14 +212,14 @@ def generate_config(PLATFORM, username, datetime):
         question = f"""
         现在有一个名为{PLATFORM}的后台管理系统，其侧边栏为{json_str}，请为其设计如下的配置信息：
 
-        1. "系统简介"：包括系统的背景、开发目的、设计理念以及一些代码实现说明，请确保文字说明详细且不少于500字，覆盖代码中的关键实现细节。
+        1. "系统简介"：请撰写系统的整体介绍，重点包括系统背景、开发目的与设计理念。需结合实际应用场景，阐述系统诞生的原因、所要解决的问题、目标用户及其使用方式。设计理念部分应聚焦于系统架构构思、用户体验、性能、安全性或可维护性等方面的思考与权衡。
         2. "功能描述"：对侧边栏每个父目录及其子目录进行一句话功能描述。
         3. "功能描述"内容以嵌套Object形式返回，第一层的每个Key为父目录名称，Value是一个子Object，该子Object中每个Key为子目录名称，value为对应的功能描述。
         4. "功能描述"的Object中的每个子Object的每个键值对之间必须以英文逗号“,”分隔，禁止使用分号。
         5. 所有Object的Key必须使用双引号引起来。
         6. 生成的所有配置信息为纯文字说明，不需要换行。
         7. 返回内容为一个JSON格式的Object，以“{{”开头，“}}”结尾，中间不要插入任何解释或说明。
-        
+
         ### 请从这里开始生成配置内容 ###
         """
         query = {"role": "user", "content": question}
@@ -233,6 +234,7 @@ def generate_config(PLATFORM, username, datetime):
         return content
     except Exception as e:
         raise e
+
 
 
 def draw_annotations(image_path, elements):
@@ -763,35 +765,51 @@ def get_sub_images(file):
 #生成系统架构图
 def generate_system_architecture_diagram_from_menu(platform_name, save_path, menu_dict):
     dot = Digraph(comment=f'{platform_name} 系统架构图', format='png')
-    dot.attr(fontname="Microsoft YaHei")  # 支持中文字体
+
+    # 设置全局字体与布局参数，让图更大更清晰
+    dot.graph_attr.update({
+        'rankdir': 'LR',          # LR：从左到右布局；也可改为 TB 自上而下
+        'nodesep': '0.7',         # 节点之间的水平间距
+        'ranksep': '0.7',         # 层次之间的间距
+        'dpi': '150',             # 分辨率，可根据需要调整
+        'fontsize': '14',         # 整体字体大小
+        'fontname': 'Microsoft YaHei',
+        'splines': 'ortho'        # 使用正交线条（可选）
+    })
+    dot.node_attr.update({
+        'fontsize': '12',
+        'fontname': 'Microsoft YaHei',
+        'shape': 'box'
+    })
+    dot.edge_attr.update({
+        'fontsize': '12',
+        'fontname': 'Microsoft YaHei'
+    })
 
     # 核心结构
-    dot.node('FE', '前端\n(Vue)', shape='box', fontname="Microsoft YaHei")
-    dot.node('BE', '后端\n(Spring Boot)', shape='box', fontname="Microsoft YaHei")
-    dot.node('DB', '数据库\n(MySQL)', shape='cylinder', fontname="Microsoft YaHei")
-    dot.node('EXT', '外部服务\n(预留)', shape='box', fontname="Microsoft YaHei")
+    dot.node('FE', '前端\n(Vue)')
+    dot.node('BE', '后端\n(Spring Boot)')
+    dot.node('DB', '数据库\n(MySQL)', shape='cylinder')
+    dot.node('EXT', '外部服务\n(预留)')
 
-    dot.edge('FE', 'BE', label='REST API', fontname="Microsoft YaHei")
-    dot.edge('BE', 'DB', label='数据交互', fontname="Microsoft YaHei")
-    dot.edge('BE', 'EXT', label='预留接口', fontname="Microsoft YaHei")
+    dot.edge('FE', 'BE', label='REST API')
+    dot.edge('BE', 'DB', label='数据交互')
+    dot.edge('BE', 'EXT', label='预留接口')
 
-    # 动态添加模块与子模块
+    # 直接挂载菜单项，不做特殊处理
     for parent, children in menu_dict.items():
-        if parent == "主菜单":
-            for child in children:
-                dot.node(child, child, shape='rect', fontname="Microsoft YaHei")
-                dot.edge('BE', child)
-        else:
-            dot.node(parent, parent, shape='rect', fontname="Microsoft YaHei")
-            dot.edge('BE', parent)
-            for sub in children:
-                dot.node(sub, sub, shape='rect', fontname="Microsoft YaHei")
-                dot.edge(parent, sub)
+        # 添加父菜单节点
+        dot.node(parent, parent)
+        dot.edge('BE', parent)
+        # 添加子菜单节点并连接
+        for child in children:
+            dot.node(child, child)
+            dot.edge(parent, child)
 
     # 渲染
-    diagram_base_path = os.path.join(save_path, "system_architecture")  # 无后缀
-    output_path = dot.render(diagram_base_path, cleanup=True)  # 自动生成 .png 文件
-    print(f"\u2705 系统架构图已生成: {output_path}")  # 直接使用渲染返回的路径
+    diagram_base_path = os.path.join(save_path, "system_architecture")
+    output_path = dot.render(diagram_base_path, cleanup=True)
+    print(f"✅ 系统架构图已生成: {output_path}")
     return output_path
 
 def generate_architecture_diagram(username, datetime_str):
@@ -915,7 +933,7 @@ def generate_word_template(title, user, time, TXT_PATH):
         if os.path.exists(system_img_path):
             para = doc.add_paragraph()
             para.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-            para.add_run().add_picture(system_img_path, width=Inches(5.5))
+            para.add_run().add_picture(system_img_path, height=Cm(21.33))
         else:
             print("⚠️ 未找到系统架构图:", system_img_path)
     except Exception as e:
