@@ -471,55 +471,65 @@ def getPageInfo(request): # 根据前端返回的当前点击的侧边栏id生�
     # 第一次调用：生成页面代码
     MESSAGE = [{"role": "system", "content": "You are a helpful programmer and product manager"}]
     question = f"""
-    现在有一个后台管理系统叫 {platform}，请为侧边栏父目录名称为 {parent_name} 下的 {child_name} 子目录所对应的页面设计 Vue2 版本的 Vue.js 页面代码，满足如下要求：
+        现在有一个后台管理系统叫 {platform}，请为侧边栏父目录名称为 {parent_name} 下的 {child_name} 子目录所对应的页面设计 Vue2 版本的 Vue.js 页面代码，满足如下要求：
 
-    【基本要求，必须遵守】
-    1. 回复必须只包含 Vue 代码，必须以 "<template>" 开头，以 "</script>" 结尾，不要包含任何解释说明。
-    2. 项目基于 Vue2 + Element-UI，禁止出现 Vue3 语法（如 setup、v-slot、#slot、Composition API 等），仅使用 Vue2 标准写法。
-    3. 图表部分必须使用全局挂载的 echarts，通过 const chart = this.$echarts.init() 方式直接调用，不允许使用 import 语法，也不允许注册组件。
-    4. 所有组件内部均应包含完整虚拟数据，且每个数据列表需包含 6-8 条真实业务场景示例数据，不从父组件传递 props。
-    5. 表单字段必须分别使用单独变量进行 v-model 绑定，不要使用统一 formData 对象。
-    6. Vue2 要求 template 中只能有一个根节点，请将页面所有内容统一包裹在一个根容器（如 <div>）。
-    7. 页面中的所有按钮统一使用 Element-UI 默认样式，不需设置颜色，新增按钮需设置 class="add"，并绑定新增表单。
-    8. el-table 表格的最后一列必须设置固定宽度（建议 width: 240px），确保“编辑”、“删除”、“详情”三个按钮在一行内横向并排展示，不得出现换行或错位现象。
+        【基本要求，必须遵守】
+        1. 回复必须只包含 Vue 代码，必须以 "<template>" 开头，以 "</script>" 结尾，不要包含任何解释说明。
+        2. 项目基于 Vue2 + Element-UI，禁止出现 Vue3 语法（如 setup、v-slot、#slot、Composition API 等），仅使用 Vue2 标准写法。
+        3. 图表部分必须使用全局挂载的 echarts，通过 const chart = this.$echarts.init() 方式直接调用，不允许使用 import 语法，也不允许注册组件。
+        4. 所有组件内部均应包含完整虚拟数据，且每个数据列表需包含 6-8 条真实业务场景示例数据，不从父组件传递 props。
+        5. 表单字段必须分别使用单独变量进行 v-model 绑定，不要使用统一 formData 对象。
+        6. Vue2 要求 template 中只能有一个根节点，请将页面所有内容统一包裹在一个根容器（如 <div>）。
+        7. 页面中的所有按钮统一使用 Element-UI 默认样式，不需设置颜色，新增按钮需设置 class="add"，并绑定新增表单。
+        8. el-table 表格的最后一列必须设置固定宽度（建议 width: 240px），确保“编辑”、“删除”、“详情”三个按钮在一行内横向并排展示，不得出现换行或错位现象。
 
-    【UI设计与样式要求】
-    1. 页面整体主题色为 {color_list}，在非按钮样式中尽可能多体现该色系，例如表头颜色、标签、进度条、Tabs 等，但按钮组件不需要设置颜色，保留 Element-UI 原本 type 的颜色。
-    2. 所有模块（如表格、图表、搜索栏、统计卡片、Tabs 等）必须包裹在 el-card 组件内，el-card 设置 shadow="always"，并设置合理 margin 和 padding。
-    3. 页面布局采用 el-row + el-col 组合，统计卡片和图表均一行两个，el-col 设置 span=12，避免单列堆叠。
-    4. 表格使用 el-table，表头背景色必须为 {color_list[0]}，通过 header-cell-style 设置。表格最后一列包含“编辑”、“删除”、“详情”三个操作按钮，按钮需在一行排列，删除按钮带确认提示框，整个操作列必须通过设置 width 固定宽度，避免按钮换行。
-    5. 分页使用 el-pagination，右对齐，风格统一。
-    6. 顶部搜索栏用 el-card 包裹，包含 el-input、el-select 和 class="add" 的新增按钮。
+        【UI设计与样式要求】
+        1. 页面整体主题色为 {color_list}，在非按钮样式中尽可能多体现该色系，例如表头颜色、标签、进度条、Tabs 等，但按钮组件不需要设置颜色，保留 Element-UI 原本 type 的颜色。
+        2. 所有模块（如表格、图表、搜索栏、统计卡片、Tabs 等）必须包裹在 el-card 组件内，el-card 设置 shadow="always"，并设置合理 margin 和 padding。
+        3. 页面布局采用 el-row + el-col 组合，统计卡片和图表均一行两个，el-col 设置 span=12，避免单列堆叠。
+        4. 表格使用 el-table，表头背景色必须为 {color_list[0]}，通过 header-cell-style 设置。表格最后一列包含“编辑”、“删除”、“详情”三个操作按钮，按钮需在一行排列，删除按钮带确认提示框，整个操作列必须通过设置 width 固定宽度，避免按钮换行。
+        5. 分页使用 el-pagination，右对齐，风格统一。
+        6. 顶部搜索栏用 el-card 包裹，包含 el-input、el-select 和 class="add" 的新增按钮。
 
-    【样式布局要求】
-    1. 全局样式注入（需在 <style> 中添加）：
-       .el-table th {{ background-color: {color_list[0]} !important; }}
+        【样式布局要求】
+        1. 全局样式注入（需在 <style> 中添加）：
+           .el-table th {{ background-color: {color_list[0]} !important; }}
+        2. 表格所在区域必须用 div 容器包裹，并设置 style="overflow-x: auto"，避免表格列过多导致内容溢出不可见。
+        3. 所有 el-table 设置 style="width: 100%;"，表格内容较多时建议设置 table-layout="fixed"。
+        4. 表格的按钮列必须设置 width，按钮在一行内横向排列，使用 el-button-group 或行内展示。
 
-   【图表要求】
-    1. 图表必须通过 this.$echarts.init() 初始化，禁止 import。
-    2. 配置项必须完整，series 内必须包含 type、data、radius 等，禁止空图。
-    3. 图表必须包含真实业务数据，放置在 el-card 中展示，布局合理美观。
-    4. 所有图表的颜色（如 series 中的 itemStyle.color、lineStyle.color、bar 的柱状图颜色等），必须从{color_list}中选取颜色值，不能使用默认配色或其他色系。
+        【图表要求】
+        1. 图表必须通过 this.$echarts.init() 初始化，禁止 import。
+        2. 配置项必须完整，series 内必须包含 type、data、radius 等，禁止空图。
+        3. 图表必须包含真实业务数据，放置在 el-card 中展示，布局合理美观。
+        4. 所有图表的颜色（如 series 中的 itemStyle.color、lineStyle.color、bar 的柱状图颜色等），必须从{color_list}中选取颜色值，不能使用默认配色或其他色系。
 
-    【组件丰富性要求】
-    页面需合理引入至少 4 种 Element-UI 组件，颜色和样式统一，组件包括但不限于：
-    - el-tabs、el-tag、el-switch、el-progress、el-divider、el-avatar、el-tooltip、el-breadcrumb、el-collapse、el-alert 等。
+        【组件丰富性要求】
+        页面需合理引入至少 4 种 Element-UI 组件，颜色和样式统一，组件包括但不限于：
+        - el-tabs、el-tag、el-switch、el-progress、el-divider、el-avatar、el-tooltip、el-breadcrumb、el-collapse、el-alert 等。
 
-    【差异化要求】
-    1. 主页页面必须包含至少一个 ECharts 图表，且布局与其他页面不同。
-    2. 非主页页面需根据 {child_name} 的业务内容，自行设计布局，避免模板化。
-    3. 示例数据必须真实可信，用户管理应有姓名、角色、手机号等字段，订单管理应有编号、金额、时间等信息。
+        【差异化要求】
+        1. 主页页面必须包含至少一个 ECharts 图表，且布局与其他页面不同。
+        2. 非主页页面需根据 {child_name} 的业务内容，自行设计布局，避免模板化。
+        3. 示例数据必须真实可信，用户管理应有姓名、角色、手机号等字段，订单管理应有编号、金额、时间等信息。
 
-   【弹窗要求】
-     可以打开新增弹窗表单的按钮设置class为add，其余按钮不需要设置class。
-     表单不设置title属性
-    1. 弹窗包括自定义头部，新增表单和操作按钮 
-    2. 弹窗的自定义头部，内容为新增XXX，设置slot="title"，覆盖本身标题,背景色必须设置为{color_list[0]}，自定义头部文字居中，
-    3. 新增数据弹窗的表单需包含至少三个字段，字段类型覆盖文本输入、数字输入、下拉选择等，字段最好和页面表格对应
-    4. 弹窗内必须包含“取消”和“确定”两个按钮，取消按钮 class="cancel"，点击取消关闭弹窗，操作按钮要符合主题色{color_list}色系中较为柔和的颜色
-    5. 弹窗需出现在屏幕正中央，align-center 为 true，弹窗宽度为屏幕宽度的 30%。
-    【已有模板提示】
-    已有以下组件模板：{all_components_code}，你可以直接复制模板中的代码来复用，但禁止使用 import 语法，也不要直接注册组件调用。
+        【弹窗要求】
+        可以打开新增弹窗表单的按钮设置class为add，其余按钮不需要设置class。
+        表单不设置title属性
+        1. 弹窗包括自定义头部，新增表单和操作按钮 
+        2. 弹窗的自定义头部，内容为新增XXX，设置slot="title"，覆盖本身标题,背景色必须设置为{color_list[0]}，自定义头部文字居中，
+        3. 新增数据弹窗的表单需包含至少三个字段，字段类型覆盖文本输入、数字输入、下拉选择等，字段最好和页面表格对应
+        4. 弹窗内必须包含“取消”和“确定”两个按钮，取消按钮 class="cancel"，点击取消关闭弹窗，操作按钮要符合主题色{color_list}色系中较为柔和的颜色
+        5. 弹窗需出现在屏幕正中央，align-center 为 true，弹窗宽度为屏幕宽度的 30%。
+
+        【已有模板提示】
+        已有以下组件模板：{all_components_code}，你可以直接复制模板中的代码来复用，但禁止使用 import 语法，也不要直接注册组件调用。
+
+        【已知 Bug 避免规则】
+        1. el-table 表格必须设置 style="width: 100%;"，外层包裹 div 设置 style="overflow-x: auto;"。
+        2. 操作按钮列使用 el-table-column width="240"，确保“编辑/删除/详情”按钮一行展示，禁止换行。
+        3. 所有 el-card 外层容器需设置 margin/padding，避免表格压边显示异常。
+        4. 弹窗需使用 align-center，且 :width="'30%'"，防止弹窗偏移或过宽，按钮保持一行横向排列。
     """
 
     MESSAGE.append({"role": "user", "content": question})
