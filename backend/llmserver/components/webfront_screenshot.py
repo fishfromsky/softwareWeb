@@ -878,7 +878,7 @@ def generate_word_template(title, user, time, TXT_PATH):
             run1 = paragraph.add_run(f"{title} {version_str}")
             run1.bold = True
             run1.font.name = "黑体"
-            run1.font.size = Pt(42)  # 调整为一号字
+            run1.font.size = Pt(28)  # 调整为1号字
 
             # 添加换行（两个换行符，中间空一行）
             paragraph.add_run("\n")
@@ -888,7 +888,7 @@ def generate_word_template(title, user, time, TXT_PATH):
             run2 = paragraph.add_run("操作手册")
             run2.bold = True
             run2.font.name = "黑体"
-            run2.font.size = Pt(40)
+            run2.font.size = Pt(28)  # 1号字
 
             # 设置居中及行间距为双倍行距
             paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
