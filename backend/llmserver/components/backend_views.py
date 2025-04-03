@@ -125,7 +125,8 @@ def first_prompt(software_name, programming_language, txt_file_path, final_path)
     【面向领域/行业】
     【软件的主要功能】
     【软件的技术特点】
-    请注意:【源程序量】后面仅需要填行数,行数是生成的随机数，范围为20000-60000行。版本号写死为v1.0
+    请注意:【源程序量】后面仅需要填行数,行数是生成的随机数，范围为20000-60000行。其中各位均不为0，【版本号】写死为v1.0
+    
     """
 
     messages.append({"role": "user", "content": user_input})
