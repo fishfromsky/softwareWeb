@@ -686,7 +686,7 @@ def read_txt_file(filename):
                 if index_local == 0:
                     # 使用正则表达式清理文本
                     cleaned_line = re.sub(r'[^\w\u4e00-\u9fff]+', '', line)
-                    context["name"] = cleaned_line + "页面"
+                    context["name"] = cleaned_line
                     index_local += 1
                 else:
                     line_data.append(line)
@@ -854,7 +854,6 @@ def generate_word_template(title, user, time, TXT_PATH):
         "title": title,
         "table": [{"version": version_str, "date": time, "name": user, "info": "初始版本"}]
     }
-    # 去掉“环境描述”，将“开发目的”修改为“系统简介”
     config = [
         {"name": "系统简介", "content": ""},
         {"name": "功能描述", "content": ""}
@@ -874,34 +873,37 @@ def generate_word_template(title, user, time, TXT_PATH):
     for paragraph in doc.paragraphs:
         if "{{ title }}" in paragraph.text:
             paragraph.clear()
-            # 添加标题（标题部分采用一号字）
+
+            # 设置字号为26号字体（13pt）
             run1 = paragraph.add_run(f"{title} {version_str}")
             run1.bold = True
             run1.font.name = "黑体"
-            run1.font.size = Pt(28)  # 调整为1号字
+            run1.font.size = Pt(26)  # 26号字对应13pt
 
-            # 添加换行（两个换行符，中间空一行）
-            paragraph.add_run("\n")
-            paragraph.add_run("\n")
+            # 第2行：空行（设置字体大小）
+            run_line1 = paragraph.add_run("\n")
+            run_line1.font.name = "黑体"
+            run_line1.font.size = Pt(26)
 
-            # 添加“操作手册”文字
+            # 第3行：空行（设置字体大小）
+            run_line2 = paragraph.add_run("\n")
+            run_line2.font.name = "黑体"
+            run_line2.font.size = Pt(26)
+
             run2 = paragraph.add_run("操作手册")
             run2.bold = True
             run2.font.name = "黑体"
-            run2.font.size = Pt(28)  # 1号字
+            run2.font.size = Pt(26)  # 同样为13pt
 
-            # 设置居中及行间距为双倍行距
             paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
             paragraph.paragraph_format.line_spacing = 2
             break
 
-    # 生成配置信息
     config_content = generate_config(title, user, time)
-
     config[0]["content"] = config_content.get("系统简介", "")
     config[1]["content"] = config_content.get("功能描述", "")
 
-    # 作者信息写入表格
+    # 写入文件修订记录表格
     table = doc.tables[0]
     for i, row_data in enumerate(main_info["table"]):
         table.cell(i + 1, 0).text = row_data["version"]
@@ -909,24 +911,19 @@ def generate_word_template(title, user, time, TXT_PATH):
         table.cell(i + 1, 2).text = row_data["name"]
         table.cell(i + 1, 3).text = row_data["info"]
 
-    # 平台配置信息
-    for section in config:
+    # 插入配置内容（一级标题序号后加“、”）
+    for i, section_data in enumerate(config):
         doc.add_page_break()
-        doc.add_heading(section["name"], level=1)
-        if "subsection" in section.keys():
-            for subsection in section["subsection"]:
-                doc.add_heading(subsection["name"], level=2)
-                doc.add_paragraph(subsection["content"])
-        else:
-            if type(section["content"]) == str:
-                doc.add_paragraph(section["content"])
-            else:
-                # 添加带序号的段落
-                doc = add_multi_level(doc, section["content"])
+        doc.add_heading(f"、{section_data['name']}", level=1)
 
-    # 添加第五部分：系统设计（架构图）
+        if isinstance(section_data["content"], str):
+            doc.add_paragraph(section_data["content"])
+        else:
+            doc = add_multi_level(doc, section_data["content"])
+
+    # 系统架构图（第3部分）
     doc.add_page_break()
-    doc.add_heading("系统设计", level=1)
+    doc.add_heading("、系统设计", level=1)
     doc.add_heading("系统架构图", level=2)
     try:
         system_img_path = os.path.join(BASE_DIR, "static", user, time, "system_architecture.png")
@@ -939,80 +936,55 @@ def generate_word_template(title, user, time, TXT_PATH):
     except Exception as e:
         print(f"插入系统架构图失败: {e}")
 
-    # 读取 TXT 并插入对应图片
+    # 插入TXT内容图文信息（第4部分）
     files = natsorted(os.listdir(TXT_PATH))
     for file in files:
         filename = os.path.join(TXT_PATH, file)
         context = read_txt_file(filename)
-
-        # 获取主图片
         image = get_image_info(file)
         if image:
             context["image"] = image
-
-            # 获取子图片
             sub_images = get_sub_images(file)
             if sub_images:
                 context["sub_images"] = sub_images
-
             main_content["subsection"].append(context)
-        else:
-            print(f"跳过 {file} 的处理，因为没有找到对应的图片")
 
     doc.add_page_break()
-    doc.add_heading(main_content["title"], level=1)
+    doc.add_heading("、使用说明", level=1)
 
     for section in main_content["subsection"]:
-        # 添加标题
         doc.add_heading(section["name"], level=2)
-
-        # 1. 添加主图片 - 优先使用标注版本
-        if "image" in section and section["image"]:
+        # 添加主图片（优先标注）
+        if "image" in section:
             paragraph = doc.add_paragraph()
             paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-
-            # 检查是否存在标注版本
-            image_path = section["image"]
-            name, ext = os.path.splitext(image_path)
+            name, ext = os.path.splitext(section["image"])
             annotated_path = f"{name}_annotated{ext}"
-
             try:
-                if os.path.exists(annotated_path):
-                    paragraph.add_run().add_picture(annotated_path, width=Inches(5.5))
-                    print(f"使用标注版图片: {annotated_path}")
-                else:
-                    paragraph.add_run().add_picture(image_path, width=Inches(5.5))
-                    print(f"使用原始图片: {image_path}")
+                pic_path = annotated_path if os.path.exists(annotated_path) else section["image"]
+                paragraph.add_run().add_picture(pic_path, width=Inches(5.5))
             except Exception as e:
-                print(f"添加图片时出错: {str(e)}")
+                print(f"添加主图片出错: {e}")
 
-        # 2. 添加内容描述
+        # 内容描述
         doc.add_paragraph(section["content"])
 
-        # 3. 添加子图片 - 同样优先使用标注版本
+        # 添加子图片
         if "sub_images" in section:
             for sub_image in section["sub_images"]:
                 paragraph = doc.add_paragraph()
                 paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-
-                # 检查是否存在标注版本
                 name, ext = os.path.splitext(sub_image)
                 annotated_sub_path = f"{name}_annotated{ext}"
-
                 try:
-                    if os.path.exists(annotated_sub_path):
-                        paragraph.add_run().add_picture(annotated_sub_path, width=Inches(5.5))
-                        print(f"使用标注版子图片: {annotated_sub_path}")
-                    else:
-                        paragraph.add_run().add_picture(sub_image, width=Inches(5.5))
-                        print(f"使用原始子图片: {sub_image}")
+                    pic_path = annotated_sub_path if os.path.exists(annotated_sub_path) else sub_image
+                    paragraph.add_run().add_picture(pic_path, width=Inches(5.5))
                 except Exception as e:
-                    print(f"添加子图片时出错: {str(e)}")
+                    print(f"添加子图片出错: {e}")
 
-    add_pager_header(doc, f"{platform} {version_str}")
-
-    doc_save_path = os.path.join(BASE_DIR, "static", user, time, "template_manual.docx")
-    doc.save(doc_save_path)
+    add_pager_header(doc, f"{title} {version_str}")
+    save_path = os.path.join(BASE_DIR, "static", user, time, "template_manual.docx")
+    doc.save(save_path)
     print('Word 文档生成完毕')
 
 
