@@ -474,7 +474,7 @@ def getPageInfo(request): # 根据前端返回的当前点击的侧边栏id生�
         现在有一个后台管理系统叫 {platform}，请为侧边栏父目录名称为 {parent_name} 下的 {child_name} 子目录所对应的页面设计 Vue2 版本的 Vue.js 页面代码，满足如下要求：
 
         【基本要求，必须遵守】
-        1. 回复必须只包含 Vue 代码，必须以 "<template>" 开头，以 "</script>" 结尾，不要包含任何解释说明。
+        1. 回复必须只包含 Vue 代码,请以文本的形式返回，必须以 "<template>" 开头，以 "</script>" 结尾，不要包含任何解释说明。
         2. 项目基于 Vue2 + Element-UI，禁止出现 Vue3 语法（如 setup、v-slot、#slot、Composition API 等），仅使用 Vue2 标准写法。
         3. 图表部分必须使用全局挂载的 echarts，通过 const chart = this.$echarts.init() 方式直接调用，不允许使用 import 语法，也不允许注册组件。
         4. 所有组件内部均应包含完整虚拟数据，且每个数据列表需包含 6-8 条真实业务场景示例数据，不从父组件传递 props。
