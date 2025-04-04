@@ -176,7 +176,7 @@ def generate_code_with_details(programming_language, layer, code_framework):
         "role": "system",
         "content": f"You are a helpful assistant that generates {programming_language} code with detailed comments and explanations for each module. Please only return the code and remove any extra explanations or descriptions."
     }]
-    user_input = f"理解下面描述中关于{layer}的部分，并为每个模块生成详细注释的{programming_language}代码, 不包含任何额外的描述，且代码内容不应包含其他格式的解释或说明，不少于500行：\n{code_framework}\n"
+    user_input = f"理解下面描述中关于{layer}的部分，并为每个模块生成详细注释的{programming_language}代码, 且代码注释必须为中文，不可以使用英文注释。不包含任何额外的描述，且代码内容不应包含其他格式的解释或说明，不少于500行：\n{code_framework}\n"
     messages.append({"role": "user", "content": user_input})
 
     assistant_output = get_response(messages).choices[0].message.content
