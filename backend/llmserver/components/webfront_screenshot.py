@@ -474,7 +474,7 @@ class ThreadResourceManager:
             if cls._instance is None:
                 cls._instance = super(ThreadResourceManager, cls).__new__(cls)
                 cls._instance.active_threads = 0
-                cls._instance.max_threads = 4  # 最大并行线程数
+                cls._instance.max_threads = 6  # 最大并行线程数
                 cls._instance.thread_queue = queue.Queue()
                 cls._instance.thread_lock = threading.Lock()
             return cls._instance
