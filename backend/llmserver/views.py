@@ -15,6 +15,9 @@ import requests
 from dashscope import ImageSynthesis
 from urllib.parse import quote
 import os
+from docx import Document
+import os
+import re
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.backend.settings")
 from django.conf import settings
 from .models import *
