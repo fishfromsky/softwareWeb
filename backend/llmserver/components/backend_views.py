@@ -332,6 +332,21 @@ if __name__ == "__main__":
 
     # 保存各层代码到 Word 文件
     file_paths = []  # 存储各层代码word文档的地址，方便后续合并
+    
+    # 持续检查前端代码文件是否存在，直到找到为止
+    frontend_code_path = os.path.join(medium_path, "前端_code.docx")
+    retry_interval = 5  # 每次等待5秒
+    attempt = 0
+    
+    print("开始检查前端代码文件...")
+    while True:
+        if os.path.exists(frontend_code_path):
+            file_paths.append(frontend_code_path)
+            print(f"检测到前端代码文件，已添加到合并列表: {frontend_code_path}")
+            break
+        
+    
+    # 添加后端层代码文件
     for layer, code in layer_codes.items():  # 获取键值对，层名-代码
         file_path = os.path.join(output_path_1, f"{layer}_code.docx")
         save_to_word(code, file_path)

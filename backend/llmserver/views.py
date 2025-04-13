@@ -546,6 +546,26 @@ def getPageInfo(request): # 根据前端返回的当前点击的侧边栏id生�
     response["content"] = page_code
     content_save+=page_code
     MESSAGE.append({"role": "assistant", "content": page_code})
+        # 保存前端代码到Word文档
+    try:
+        # 创建webfront文件夹
+        webfront_path = os.path.join(MEDIUM_PATH, username, datetime, "webfront")
+        if not os.path.exists(webfront_path):
+            os.makedirs(webfront_path)
+            
+        # 处理前端代码，只保留template部分并删除空行
+        processed_code = process_frontend_code(content_save)
+            
+        doc = Document()
+         # 添加文件名作为标题
+        doc.add_heading(child_name+"页面", level=1)
+        doc.add_paragraph(processed_code)
+        frontend_doc_path = os.path.join(MEDIUM_PATH, username, datetime, "webfront", f"前端_code_{menu_item}.docx")
+        doc.save(frontend_doc_path)
+        print(f"前端代码已保存到: {frontend_doc_path}")
+    except Exception as e:
+        print(f"保存前端代码到Word文档时出错: {e}")
+
     # 第二次调用：生成说明文档
     question = f"""
    请根据你所生成的页面代码，详细介绍该页面的业务功能与使用说明，要求如下：
@@ -725,6 +745,24 @@ def getPageMain(request):
                 #print(delta.content, end='', flush=True)
                 content += delta.content
     response["content"] = content
+    try:
+        # 创建webfront文件夹
+        webfront_path = os.path.join(MEDIUM_PATH, username, datetime, "webfront")
+        if not os.path.exists(webfront_path):
+            os.makedirs(webfront_path)
+            
+        # 处理前端代码，只保留template部分并删除空行
+        processed_code = process_frontend_code(content)
+            
+        doc = Document()
+        doc.add_heading("登录页面", level=1)
+        doc.add_paragraph(processed_code)
+        frontend_doc_path = os.path.join(MEDIUM_PATH, username, datetime, "webfront", "前端_code_0-0.docx")
+        doc.save(frontend_doc_path)
+        print(f"登录代码已保存到: {frontend_doc_path}")
+    except Exception as e:
+        print(f"保存登录代码到Word文档时出错: {e}")
+
     messages.append({"role": "assistant", "content": content})
     user_msg = {"role": "user", "content": question2}
     messages.append(user_msg)
@@ -862,6 +900,23 @@ def getPageVice(request):
                 #print(delta.content, end='', flush=True)
                 content += delta.content
     response["content"] = content
+    try:
+        # 创建webfront文件夹
+        webfront_path = os.path.join(MEDIUM_PATH, username, datetime, "webfront")
+        if not os.path.exists(webfront_path):
+            os.makedirs(webfront_path)
+            
+        # 处理前端代码，只保留template部分并删除空行
+        processed_code = process_frontend_code(content)
+        doc = Document()
+        doc.add_heading("注册页面", level=1)
+        doc.add_paragraph(processed_code)
+        frontend_doc_path = os.path.join(MEDIUM_PATH, username, datetime, "webfront", "前端_code_0-1.docx")
+        doc.save(frontend_doc_path)
+        print(f"注册前端代码已保存到: {frontend_doc_path}")
+    except Exception as e:
+        print(f"注册前端代码到Word文档时出错: {e}")
+
     messages.append({"role": "assistant", "content": content})
     user_msg = {"role": "user", "content": question2}
     messages.append(user_msg)
@@ -896,3 +951,20 @@ def getPageVice(request):
         f.write(content)
         f.close()
     return JsonResponse(response)
+
+# 添加处理前端代码的函数
+def process_frontend_code(code):
+    # 提取<template>和</template>之间的内容
+    template_pattern = re.compile(r'<template>(.*?)</template>', re.DOTALL)
+    template_match = template_pattern.search(code)
+    
+    if template_match:
+        template_content = template_match.group(1)
+        # 删除空行
+        lines = template_content.split('\n')
+        non_empty_lines = [line for line in lines if line.strip()]
+        processed_content = '\n'.join(non_empty_lines)
+        return processed_content
+    
+    # 如果没有找到template标签，则返回原始代码
+    return code

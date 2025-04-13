@@ -653,6 +653,79 @@ def main_process(IMAGE_PATH, port, username, datetime):
         thread.join(timeout=600)  # 最多等待10分钟
     
     print("所有菜单项处理完成或超时")
+    
+    # 合并所有前端代码文件
+    merge_frontend_code_files(username, datetime)
+
+
+# 合并前端代码文件的函数
+def merge_frontend_code_files(username, datetime):
+    """
+    合并webfront目录下的所有前端代码文件，按照0-0，0-1等编号顺序
+    """
+    try:
+        from docx import Document
+        
+        # 获取所有前端代码文件
+        webfront_path = os.path.join(BASE_DIR, "medium", username, datetime, "webfront")
+        if not os.path.exists(webfront_path):
+            print(f"webfront目录不存在: {webfront_path}")
+            return
+            
+        # 获取所有docx文件
+        frontend_files = []
+        for file in os.listdir(webfront_path):
+            if file.startswith("前端_code_") and file.endswith(".docx"):
+                frontend_files.append(file)
+                
+        if not frontend_files:
+            print("没有找到前端代码文件")
+            return
+            
+        # 排序文件 (0-0, 0-1, 1-1, 1-2, etc.)
+        def get_file_order(filename):
+            # 提取编号部分
+            match = re.search(r'前端_code_(\d+)-?(\d+)?', filename)
+            if match:
+                if match.group(2):  # 如果有两级编号 (如1-2)
+                    return int(match.group(1)) * 100 + int(match.group(2))
+                else:  # 如果只有一级编号
+                    return int(match.group(1)) * 100
+            return 9999  # 默认值，用于没有匹配的情况
+                
+        frontend_files.sort(key=get_file_order)
+        print(f"找到并排序好的前端代码文件: {frontend_files}")
+        
+        # 创建新的文档来合并
+        merged_doc = Document()
+        
+        # 遍历合并每个文件
+        for file in frontend_files:
+            file_path = os.path.join(webfront_path, file)
+            try:
+                doc = Document(file_path)
+                
+               
+                # 复制段落
+                for para in doc.paragraphs:
+                    if para.text:  # 只复制非空段落
+                        merged_doc.add_paragraph(para.text)
+                        
+                # 添加分隔符
+                merged_doc.add_paragraph("=" * 50)
+                
+                print(f"成功合并文件: {file}")
+            except Exception as e:
+                print(f"合并文件 {file} 时出错: {e}")
+        
+        # 保存合并后的文档
+        output_path = os.path.join(BASE_DIR, "medium", username, datetime, "前端_code.docx")
+        merged_doc.save(output_path)
+        print(f"前端代码合并完成，已保存到: {output_path}")
+        
+    except Exception as e:
+        print(f"合并前端代码文件过程中出错: {e}")
+
 
 # 主函数
 def main(username, datetime, IMAGE_PATH, colors):
