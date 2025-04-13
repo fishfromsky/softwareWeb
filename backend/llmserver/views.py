@@ -955,6 +955,7 @@ def getPageVice(request):
 # 添加处理前端代码的函数
 def process_frontend_code(code):
     # 提取<template>和</template>之间的内容
+    import re
     template_pattern = re.compile(r'<template>(.*?)</template>', re.DOTALL)
     template_match = template_pattern.search(code)
     
