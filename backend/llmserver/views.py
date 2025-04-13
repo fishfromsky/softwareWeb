@@ -747,24 +747,6 @@ def getPageMain(request):
                 #print(delta.content, end='', flush=True)
                 content += delta.content
     response["content"] = content
-    try:
-        # 创建webfront文件夹
-        webfront_path = os.path.join(MEDIUM_PATH, username, datetime, "webfront")
-        if not os.path.exists(webfront_path):
-            os.makedirs(webfront_path)
-            
-        # 处理前端代码，只保留template部分并删除空行
-        processed_code = process_frontend_code(content)
-            
-        doc = Document()
-        doc.add_heading("登录页面", level=1)
-        doc.add_paragraph(processed_code)
-        frontend_doc_path = os.path.join(MEDIUM_PATH, username, datetime, "webfront", "前端_code_0-0.docx")
-        doc.save(frontend_doc_path)
-        print(f"登录代码已保存到: {frontend_doc_path}")
-    except Exception as e:
-        print(f"保存登录代码到Word文档时出错: {e}")
-
     messages.append({"role": "assistant", "content": content})
     user_msg = {"role": "user", "content": question2}
     messages.append(user_msg)
@@ -902,23 +884,7 @@ def getPageVice(request):
                 #print(delta.content, end='', flush=True)
                 content += delta.content
     response["content"] = content
-    try:
-        # 创建webfront文件夹
-        webfront_path = os.path.join(MEDIUM_PATH, username, datetime, "webfront")
-        if not os.path.exists(webfront_path):
-            os.makedirs(webfront_path)
-            
-        # 处理前端代码，只保留template部分并删除空行
-        processed_code = process_frontend_code(content)
-        doc = Document()
-        doc.add_heading("注册页面", level=1)
-        doc.add_paragraph(processed_code)
-        frontend_doc_path = os.path.join(MEDIUM_PATH, username, datetime, "webfront", "前端_code_0-1.docx")
-        doc.save(frontend_doc_path)
-        print(f"注册前端代码已保存到: {frontend_doc_path}")
-    except Exception as e:
-        print(f"注册前端代码到Word文档时出错: {e}")
-
+   
     messages.append({"role": "assistant", "content": content})
     user_msg = {"role": "user", "content": question2}
     messages.append(user_msg)
