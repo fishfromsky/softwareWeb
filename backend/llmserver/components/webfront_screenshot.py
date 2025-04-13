@@ -16,6 +16,7 @@ from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.shared import Cm
 import json
 import sys
+import subprocess
 import shutil
 import re
 from utils import add_multi_level, add_manual, add_pager_header
