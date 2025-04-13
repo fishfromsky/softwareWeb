@@ -196,7 +196,6 @@ def generate_code_with_details(programming_language, layer, code_framework):
 # 细化每个模块的代码生成，修改生成“用户表设计”模块的部分
 def generate_submodules_for_layer(programming_language, layer_name, code_framework, json_answer=None):
     submodules = {
-        "前端": ["页面布局", "组件开发", "状态管理", "API调用", "权限前端控制"],
         "后端": ["用户认证模块", "数据存储模块", "错误处理模块", "日志记录模块", "配置管理模块"],
         "数据库": ["用户表设计", "存储过程", "视图", "索引优化", "数据备份机制"],
         "API": ["用户API接口", "订单API接口", "认证接口", "限流接口", "第三方API对接"],
@@ -221,7 +220,7 @@ def generate_submodules_for_layer(programming_language, layer_name, code_framewo
 
 # 并发生成所有层代码
 def generate_all_layers_concurrently(programming_language, code_framework, json_answer=None):
-    layer_names = ["前端", "后端", "数据库", "API", "业务", "安全"]
+    layer_names = [ "后端", "数据库", "API", "业务", "安全"]
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         future_to_layer = {
