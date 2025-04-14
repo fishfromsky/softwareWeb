@@ -367,6 +367,12 @@ def getUserAllRecord(request):
                 dict_record["introduce_status"] = 1
                 record_item.introduce_status = 1
                 record_item.save()
+        if dict_record.get("register_status", 0) == 0 and dict_record.get("register_download") and dict_record["register_download"].strip():
+            relative_path = os.path.join(BASE_DIR, *dict_record["register_download"].split("/")[3:])
+            if os.path.exists(relative_path):
+                dict_record["register_status"] = 1
+                record_item.register_status = 1
+                record_item.save()
         response["data"].append(dict_record)
     return JsonResponse(response)
 
