@@ -17,6 +17,8 @@ class UserRecord(models.Model):
     pdf_status = models.IntegerField(default=0)
     code_status = models.IntegerField(default=0)
     introduce_status = models.IntegerField(default=0)
+    register_status = models.IntegerField(default=0)
     pdf_download = models.CharField(max_length=255, default='')
     code_download = models.CharField(max_length=255, default='')
     introduce_download = models.CharField(max_length=255, default='')
+    register_download = models.CharField(max_length=255, default='')

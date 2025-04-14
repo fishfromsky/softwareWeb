@@ -11,6 +11,8 @@ urlpatterns = [
     url('pdfdownload', views.pdfDownload),  # 获取PDF文件
     url('txtdownload', views.txtDownload),  # 获取txt文件
     url('worddownload', views.wordDownload),  # 获取word文档
+    url('docxdownload', views.registerDownloadDocx),  # 获取软著注册表
+    url('generateRegistration', views.generateRegistration),  # 生成软著注册表
 
     url('getmenu', views.getMenuConfig),   # 获取侧边栏
     url('getname', views.getNameConfig),   # 获取平台名称

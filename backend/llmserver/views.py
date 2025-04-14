@@ -920,10 +920,45 @@ def getPageVice(request):
         f.close()
     return JsonResponse(response)
 
-# 添加处理前端代码的函数
+
+
+@require_http_methods(["GET"])
+def registerDownloadDocx(request):
+    user_id = request.GET.get("user_id")
+    time = request.GET.get("time")
+    username = UserProfile.objects.get(id=user_id).username
+    static_file_path = os.path.join(BASE_DIR, "static", username, time, "软著注册表.txt")
+    file = open(static_file_path, "rb")
+    response = FileResponse(file)
+    response["Content-Disposition"] = f"attachment; filename='{username}'+'{time}'+'.txt"
+    return response
+
+def run_app_script(software_name, programming_language, user_id, time_str):
+    """运行app.py脚本生成软著注册表"""
+    try:
+        username = UserProfile.objects.get(id=user_id).username
+        
+        # 确保输出目录存在
+        output_dir = os.path.join(BASE_DIR, "static", username, time_str)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+            
+        # 生成输出文件路径 - 使用txt作为主要格式
+        output_path = os.path.join(output_dir, "软著注册表.txt")
+        
+        # 运行app.py脚本
+        subprocess.run(
+            ["python", os.path.join(BASE_DIR, "llmserver", "components", "app.py"), 
+             software_name, programming_language, output_path, output_dir],
+            check=True
+        )
+        
+        print(f"软著注册表生成成功: {output_path}")
+    except Exception as e:
+        print(f"运行app.py脚本出错: {e}")
+
 def process_frontend_code(code):
     # 提取<template>和</template>之间的内容
-    import re
     template_pattern = re.compile(r'<template>(.*?)</template>', re.DOTALL)
     template_match = template_pattern.search(code)
     
@@ -937,3 +972,41 @@ def process_frontend_code(code):
     
     # 如果没有找到template标签，则返回原始代码
     return code
+
+@require_http_methods(["GET"])
+def generateRegistration(request):
+    """生成软著注册表"""
+    response = {"code": 0, "message": "success"}
+    try:
+        user_id = request.GET.get("user_id")
+        record_id = request.GET.get("record_id")
+        
+        # 从数据库中查询项目信息
+        record = UserRecord.objects.get(id=record_id)
+        software_name = record.name  # 获取软件名称
+        programming_language = record.language  # 获取编程语言
+        
+        # 启动线程运行app.py
+        thread = threading.Thread(
+            target=run_app_script,
+            args=(software_name, programming_language, user_id, record.time)
+        )
+        thread.daemon = True
+        thread.start()
+        
+        # 准备路径
+        username = UserProfile.objects.get(id=user_id).username
+        
+        # 设置软著注册表下载路径和状态
+        record.register_download = f"{WEB_URL}/{username}/{record.time}/软著注册表.txt"
+        record.register_status = 0
+        record.save()
+        
+        # 返回成功消息
+        response["message"] = "软著注册表正在生成，请稍后查看"
+        return JsonResponse(response)
+    except UserRecord.DoesNotExist:
+        return JsonResponse({"code": 1, "message": "记录不存在"})
+    except Exception as e:
+        print(f"设置软著注册表信息出错: {e}")
+        return JsonResponse({"code": 1, "message": f"设置软著注册表信息失败: {str(e)}"})

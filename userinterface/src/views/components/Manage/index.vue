@@ -22,9 +22,20 @@
                     <div v-else>正在生成中</div>
                 </template>
             </el-table-column>
+            <el-table-column label="软件注册文档下载">
+                <template slot-scope="scope">
+                    <el-button v-if="scope.row.register_status" @click="handleDownLoadRegister(scope.row)" type="primary" size="mini">下载</el-button>
+                    <div v-else>正在生成中</div>
+                </template>
+            </el-table-column>
             <el-table-column label="操作">
                 <template slot-scope="scope">
                     <el-button  @click="handleDelete(scope.$index, scope.row)" type="danger" size="mini">删除</el-button>
+                </template>
+            </el-table-column>
+            <el-table-column label="软著注册">
+                <template slot-scope="scope">
+                    <el-button @click="handleGenerateRegistration(scope.row)" type="danger" size="mini">生成注册表</el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -110,6 +121,28 @@ export default {
             })
         },
 
+        handleDownLoadRegister(data) {
+            var params = {
+                'time': data.time,
+                'user_id': data.user
+            }
+            this.$http({
+                url: 'api/docxdownload',
+                method: 'get',
+                responseType: 'blob',
+                params: params
+            }).then(res => {
+                const url = window.URL.createObjectURL(new Blob([res.data]))
+                const link = document.createElement('a')
+                link.href = url
+                link.setAttribute('download', `${data.name}软著注册表.txt`)
+                document.body.appendChild(link)
+                link.click()
+                window.URL.revokeObjectURL(url)
+                document.body.removeChild(link)
+            })
+        },
+
         handleDelete(index, row) {
             MessageBox.confirm('此操作将永久删除该记录, 是否继续?', '提示', {
                 confirmButtonText: '确定',
@@ -135,6 +168,24 @@ export default {
                     message: '已取消删除'
                 });
             });
+        },
+
+        handleGenerateRegistration(data) {
+            var params = {
+                'time': data.time,
+                'user_id': data.user,
+                'record_id': data.id
+            }
+            this.$http({
+                url: 'api/generateRegistration',
+                method: 'get',
+                params: params
+            }).then(res => {
+                this.$message.success('软著注册表生成成功')
+            }).catch(err => {
+                this.$message.error('生成注册表失败，请稍后重试')
+                console.error(err)
+            })
         },
 
         getMetadata() {
