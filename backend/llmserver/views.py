@@ -949,7 +949,7 @@ def run_app_script(software_name, programming_language, user_id, time_str):
         
         # 运行app.py脚本
         subprocess.run(
-            ["python", os.path.join(BASE_DIR, "llmserver", "components", "app.py"), 
+            ["python3", os.path.join(BASE_DIR, "llmserver", "components", "app.py"), 
              software_name, programming_language, output_path, output_dir],
             check=True
         )
