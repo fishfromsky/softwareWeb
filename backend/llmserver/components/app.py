@@ -90,9 +90,9 @@ def generate_main_function():
 要求必须在：
 1. 内容为完整书面句子，不允许使用列点或"、"；
 2. 描述应包括核心功能；
-3. 内容长度在100个汉字以上；
+3. 内容长度在100个汉字以上,200个汉字以下
 4. 只输出内容本身，不附带任何解释。
-回复需要在100字以上
+回复必须满足字数要求，100-200汉字，不要输出多余内容。
 """
     messages = [{'role': 'user', 'content': prompt}]
     content = get_model_response(messages)
