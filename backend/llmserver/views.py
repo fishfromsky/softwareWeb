@@ -17,6 +17,7 @@ from urllib.parse import quote
 import os
 from docx import Document
 import re
+import subprocess
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.backend.settings")
 from django.conf import settings
 from .models import *
