@@ -110,7 +110,7 @@ def first_prompt(software_name, programming_language, txt_file_path, final_path)
     user_input = f"请根据以下框架信息扩展对{software_name}这一软件著作权的软件描述\n"
     user_input += f"""
     扩展软件描述的模板如下：
-    【软件全称】
+    【软件全称】{software_name}
     【版本号】
     【软件分类】
     【开发的硬件环境】
