@@ -370,8 +370,8 @@ def generate_fields_via_model():
     return get_model_register_response(messages)
 # === 生成主要功能描述（简洁版，不判定长度）===
 def generate_main_function(software_name,tech_features):
-    prompt = f"""请阅读以下资料和任务要求，请保证回复字数要求必须完成：100~200字
-请围绕一款名为“{software_name}”的软件，根据已有的软件功能总结生成一段中文描述说明其主要功能，务必注意内容长度必须大于100个字符，同时小于200个字符。字数要求必须完成\n
+    prompt = f"""
+请根据已有的软件功能总结生成一段中文描述说明其主要功能，务必注意内容长度必须大于100个字符，同时小于200个字符。\n
 {tech_features}
 """
     messages = [{'role': 'user', 'content': prompt}]
@@ -401,15 +401,6 @@ def summarize_technical_features(raw_features):
     )
     return response.choices[0].message.content.strip()
 # === 总结技术特点（20~100字）
-def summarize_technical_features(raw_features):
-    prompt = f"""
-请将以下技术特点内容压缩为20到100个汉字之间的简明描述，保持主要含义，风格专业：
-{raw_features}
-只返回压缩后的内容。
-回复内容中除了压缩的内容，不要包括任何其余解释
-"""
-    messages = [{'role': 'user', 'content': prompt}]
-    return get_model_register_response(messages)
 
 # === 根据技术特点内容判断最合适的选项
 def choose_tech_option(summary):
