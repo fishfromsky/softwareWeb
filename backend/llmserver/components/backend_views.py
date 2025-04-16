@@ -206,7 +206,7 @@ def generate_code_with_details(programming_language, layer, code_framework):
 
     assistant_output = get_response(messages).choices[0].message.content
 
-    # 过滤掉不需要的内容：删除以“Below is a detailed...”开头的描述性文字、代码块标记、注释等
+    # 过滤掉不需要的内容：删除以"Below is a detailed..."开头的描述性文字、代码块标记、注释等
     # 删除以 ``` 开头的行和其余内容
     code_only = re.sub(r"(?i)^(below is a detailed.*|python\s*|code follows.*|the code is).*", "", assistant_output)
     code_only = re.sub(r"^```.*", "", code_only)  # 删除以 ``` 开头的行
@@ -218,7 +218,7 @@ def generate_code_with_details(programming_language, layer, code_framework):
     return code_only
 
 
-# 细化每个模块的代码生成，修改生成“用户表设计”模块的部分
+# 细化每个模块的代码生成，修改生成"用户表设计"模块的部分
 def generate_submodules_for_layer(programming_language, layer_name, code_framework, json_answer=None):
     submodules = {
         "后端": ["用户认证模块", "数据存储模块", "错误处理模块", "日志记录模块", "配置管理模块"],
@@ -232,7 +232,7 @@ def generate_submodules_for_layer(programming_language, layer_name, code_framewo
     for submodule in submodules[layer_name]:
         submodule_description = f"{layer_name}层 - {submodule}"
 
-        # 如果是“用户表设计”模块，将json_answer加入到输入
+        # 如果是"用户表设计"模块，将json_answer加入到输入
         if layer_name == "数据库" and submodule == "用户表设计" and json_answer:
             submodule_code = generate_code_with_details(programming_language, submodule_description, code_framework + "\n" + json_answer)
         else:
@@ -382,26 +382,44 @@ def generate_main_function(software_name,tech_features):
     return response.choices[0].message.content.strip()
 # === 总结技术特点（20~100字）
 def summarize_technical_features(raw_features):
-    prompt = f"""请阅读以下资料和任务要求，请保证回复字数要求必须完成：20~100字
-    软件著作权的技术特点主要涉及软件的创新性和原创性，包括以下方面：
+    # 第一段对话：提供软件著作权的技术特点资料
+    first_message = {
+        'role': 'user', 
+        'content': """软件著作权的技术特点主要涉及软件的创新性和原创性，包括以下方面：
 1：创新性：软件著作权要求软件必须具有一定的创新性，即相对于已有的软件，具有独特的技术和功能。这个特点通常需要通过技术分析、代码分析等手段来证明。
 2：原创性：软件著作权还要求软件必须由软件开发者自己创作或者有合法的来源，不得侵犯他人的知识产权。这个特点需要在软件开发的过程中遵循相关的知识产权法律法规，避免侵权行为。
 3：可复制性：软件著作权的另一个重要特点是可复制性，即软件可以通过复制的方式进行传播和使用。因此，在软件开发的过程中需要考虑软件的安全性和版权保护，防止软件被非法复制和使用。
 4；易操作性：软件著作权的另一个技术特点是易操作性，即软件必须易于操作和使用，符合用户的需求和使用习惯，具有一定的用户友好性。
-5：可维护性：软件著作权的另一个技术特点是可维护性，即软件必须易于维护和更新，能够及时修复漏洞和bug，提供良好的技术支持和服务，确保软件的可靠性和稳定性。
-
-    已有一款软件的软件功能描述，现在需要生成这款软件的技术特点，参考给予的资料，回复中避免数据字样如准确率等等，回复字数：20~100字：
-    {raw_features}
-
-"""
-    messages = [{'role': 'user', 'content': prompt}]
+5：可维护性：软件著作权的另一个技术特点是可维护性，即软件必须易于维护和更新，能够及时修复漏洞和bug，提供良好的技术支持和服务，确保软件的可靠性和稳定性。"""
+    }
+    
+    # 模型响应第一段对话
+    first_response = client.chat.completions.create(
+        model="qwen2.5-coder-32b-instruct",
+        messages=[first_message]
+    )
+    
+    # 第二段对话：询问生成技术特点
+    second_message = {
+        'role': 'user',
+        'content': f"""已有一款软件的软件功能描述，现在需要生成这款软件的技术特点，回复中避免数据字样如准确率等等，回复字数：20~100字：
+{raw_features}"""
+    }
+    
+    # 构建完整对话历史
+    messages = [
+        first_message,
+        {'role': 'assistant', 'content': first_response.choices[0].message.content.strip()},
+        second_message
+    ]
+    
+    # 获取最终响应
     response = client.chat.completions.create(
         model="qwen2.5-coder-32b-instruct",
         messages=messages
     )
+    
     return response.choices[0].message.content.strip()
-# === 总结技术特点（20~100字）
-
 # === 根据技术特点内容判断最合适的选项
 def choose_tech_option(summary):
     options = ["APP", "游戏软件", "人工智能软件", "金融软件", "大数据软件", "云计算软件", "信息安全软件", "小程序", "物联网", "智慧城市软件"]
