@@ -371,7 +371,7 @@ def generate_fields_via_model():
 # === 生成主要功能描述（简洁版，不判定长度）===
 def generate_main_function(software_name,tech_features):
     prompt = f"""
-请围绕一款名为“{software_name}”的软件，根据已有的软件功能总结生成一段中文描述说明其主要功能，务必注意内容长度必须大于100个字符，同时小于200个字符。\n
+请围绕一款名为“{software_name}”的软件，根据已有的软件功能总结生成一段中文描述说明其主要功能，务必注意内容长度必须大于100个字符，同时小于200个字符。字数要求必须完成\n
 {tech_features}
 """
     messages = [{'role': 'user', 'content': prompt}]
@@ -383,9 +383,9 @@ def generate_main_function(software_name,tech_features):
 # === 总结技术特点（20~100字）
 def summarize_technical_features(raw_features):
     prompt = f"""
-请将以下技术特点内容压缩为20到100个汉字之间的简明描述，保持主要含义，风格专业：
+    已有一款软件的软件功能描述，现在需要生成这款软件的技术特点，保持主要含义，风格专业，回复字数：20~100字，字数要求必须完成：
 {raw_features}
-只返回压缩后的内容。
+
 """
     messages = [{'role': 'user', 'content': prompt}]
     response = client.chat.completions.create(
