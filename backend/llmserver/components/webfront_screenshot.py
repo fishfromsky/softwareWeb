@@ -976,6 +976,32 @@ def generate_word_template(title, user, time, TXT_PATH):
     config_content = generate_config(title, user, time)
     config[0]["content"] = config_content.get("系统简介", "")
     config[1]["content"] = config_content.get("功能描述", "")
+    
+    # 将功能描述保存为单独的txt文件
+    function_description = config_content.get("功能描述", "")
+    if function_description:
+        # 确保medium目录存在
+        medium_path = os.path.join(BASE_DIR, "medium", user, time)
+        os.makedirs(medium_path, exist_ok=True)
+        
+        # 保存功能描述到txt文件
+        function_file_path = os.path.join(medium_path, "function.txt")
+        try:
+            with open(function_file_path, "w", encoding="utf-8") as f:
+                # 如果是字典格式，转换为格式化文本
+                if isinstance(function_description, dict):
+                    for parent_menu, submenu_dict in function_description.items():
+                        f.write(f"{parent_menu}:\n")
+                        if isinstance(submenu_dict, dict):
+                            for submenu, description in submenu_dict.items():
+                                f.write(f"  {submenu}: {description}\n")
+                        else:
+                            f.write(f"  {submenu_dict}\n")
+                else:
+                    f.write(function_description)
+            print(f"✅ 功能描述已保存到: {function_file_path}")
+        except Exception as e:
+            print(f"❌ 保存功能描述失败: {e}")
 
     # 写入文件修订记录表格
     table = doc.tables[0]

@@ -1,6 +1,7 @@
 from openai import OpenAI
 import os
 import json
+import random
 from docx import Document
 import re
 import concurrent.futures
@@ -9,7 +10,7 @@ from pdf_views import main_pdf
 from docx.shared import Pt
 from docx.oxml.ns import qn
 import time
-
+from tenacity import retry, stop_after_attempt, wait_exponential
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
 
@@ -19,6 +20,30 @@ client = OpenAI(
     api_key=settings.BACKEND_LLM_KEY[0],
     base_url=settings.BACKEND_LLM_URL[0],
 )
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=20))
+def get_model_register_response(messages, model="qwq-plus-latest"):
+    try:
+        print(f"[DEBUG] 发送请求到模型: {model}")
+        # 使用流式模式调用模型
+        response_stream = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            stream=True  # 启用流式响应
+        )
+        
+        # 从流中收集完整响应
+        full_response = ""
+        for chunk in response_stream:
+            if chunk.choices and hasattr(chunk.choices[0], 'delta') and hasattr(chunk.choices[0].delta, 'content'):
+                content = chunk.choices[0].delta.content
+                if content is not None:
+                    full_response += content
+        
+        print(f"[DEBUG] 模型响应完成，长度: {len(full_response)}")
+        return full_response.strip()
+    except Exception as e:
+        print(f"[ERROR] 模型调用失败: {e}")
+        raise e
 
 def get_model_response(user_message):
     message = [{"role": "user", "content": user_message}]
@@ -299,6 +324,149 @@ def merge_word_documents(file_paths, output_path, software_name):
     except Exception as e:
         print(f"保存合并文档时出错: {e}")
 
+def extract_technical_features_from_file(username, datetime):
+    """从function.txt文件中获取技术特点"""
+    try:
+        # 构建function.txt路径
+        function_file_path = os.path.join(BASE_DIR, "medium", username, datetime, "function.txt")
+        print(f"尝试读取功能文件: {function_file_path}")
+        while True:
+            if os.path.exists(function_file_path):
+            # 如果存在，直接读取其内容作为技术特点
+                with open(function_file_path, 'r', encoding='utf-8') as f:
+                    tech_features = f.read().strip()
+                    print(f"✅ 从function.txt成功读取技术特点，长度: {len(tech_features)}")
+                    break
+        return tech_features
+    except Exception as e:
+        print(f"❌ 读取文件出错: {e}")
+        return ""
+def generate_source_lines():
+    while True:
+        num = random.randint(20000, 25000)
+        if '0' not in str(num):
+            return num
+# === 生成标准字段（通用字段9项）
+def generate_fields_via_model():
+    prompt = f"""
+    请根据以下框架信息扩展对{software_name}这一软件著作权的软件描述\n
+请为以下软件字段生成内容。要求：
+1. 每项内容直接接在字段标签后（同一行）；
+2. 内容风格为简洁罗列；
+3. 每项独占一行，示例如下：
+
+【开发的硬件环境】CPU: Intel i7-10700K 主频:3.8GHz 内存:32GB SSD:512GB
+【运行的硬件环境】CPU: Xeon E5-2640 内存:16GB 存储:1.2T*24块(SAS)
+【开发该软件的操作系统】Windows Server 2016、Ubuntu 20.04
+【软件开发环境或者开发工具】PyCharm、VS Code、Git、MySQL Workbench
+【软件的运行平台或操作系统】Windows 10、Android 11、Linux CentOS
+【软件运行支撑环境或支持软件】Python 3.10、Redis、MySQL、Chrome
+【开发目的】
+【面向领域/行业】
+
+⚠️只生成以上字段，禁止生成多余字段。
+"""
+    messages = [{'role': 'user', 'content': prompt}]
+    return get_model_register_response(messages)
+# === 生成主要功能描述（简洁版，不判定长度）===
+def generate_main_function(software_name,tech_features):
+    prompt = f"""
+请围绕一款名为“{software_name}”的软件，根据已有的软件功能{tech_features},总结生成一段中文描述说明其主要功能，务必注意内容长度必须大于100个字符，同时小于200个字符。
+"""
+    messages = [{'role': 'user', 'content': prompt}]
+    response = client.chat.completions.create(
+        model="qwen2.5-coder-32b-instruct",
+        messages=messages
+    )
+    return response.choices[0].message.content.strip()
+# === 总结技术特点（20~100字）
+def summarize_technical_features(raw_features):
+    prompt = f"""
+请将以下技术特点内容压缩为20到100个汉字之间的简明描述，保持主要含义，风格专业：
+{raw_features}
+只返回压缩后的内容。
+"""
+    messages = [{'role': 'user', 'content': prompt}]
+    response = client.chat.completions.create(
+        model="qwen2.5-coder-32b-instruct",
+        messages=messages
+    )
+    return response.choices[0].message.content.strip()
+# === 总结技术特点（20~100字）
+def summarize_technical_features(raw_features):
+    prompt = f"""
+请将以下技术特点内容压缩为20到100个汉字之间的简明描述，保持主要含义，风格专业：
+{raw_features}
+只返回压缩后的内容。
+回复内容中除了压缩的内容，不要包括任何其余解释
+"""
+    messages = [{'role': 'user', 'content': prompt}]
+    return get_model_register_response(messages)
+
+# === 根据技术特点内容判断最合适的选项
+def choose_tech_option(summary):
+    options = ["APP", "游戏软件", "人工智能软件", "金融软件", "大数据软件", "云计算软件", "信息安全软件", "小程序", "物联网", "智慧城市软件"]
+    prompt = f"""
+根据以下软件技术特点内容，判断最适合归类的类型，并从以下选项中选择一个最匹配的：
+{options}
+
+技术特点描述如下：
+{summary}
+
+请返回最合适的一个类别名称（仅输出选项本身，不加任何解释）。
+"""
+    messages = [{'role': 'user', 'content': prompt}]
+    return get_model_register_response(messages)
+        
+# === 拼接最终内容并保存
+def generate_and_save_txt(output_path):
+    global software_name, programming_language, tech_features
+    
+    version = "V1.0"
+    category = "应用软件"
+    code_lines = generate_source_lines()
+
+    # 生成所有部分
+    model_fields = generate_fields_via_model().splitlines()
+    main_function = generate_main_function(software_name,tech_features)
+    summarized_tech = summarize_technical_features(tech_features)
+    tech_option = choose_tech_option(summarized_tech)
+
+    # 插入语言/行数
+    insert_after = "【软件运行支撑环境或支持软件】"
+    insert_index = next((i for i, line in enumerate(model_fields) if line.startswith(insert_after)), -1)
+    if insert_index != -1:
+        model_fields.insert(insert_index + 1, f"【编程语言】{programming_language}")
+        model_fields.insert(insert_index + 2, f"【源程序量】{code_lines}")
+    else:
+        model_fields.append(f"【编程语言】{programming_language}")
+        model_fields.append(f"【源程序量】{code_lines}")
+
+    # 拼接尾部字段
+    model_fields.append(f"【软件的主要功能】{main_function}")
+    model_fields.append(f"【技术特点】{summarized_tech}")
+    model_fields.append(f"【软件的技术特点选项】{tech_option}")
+
+    # 最终合成
+    final_text = f"""【软件名称】{software_name}
+【版本号】{version}
+【软件分类】{category}
+""" + "\n".join(model_fields)
+
+    try:
+        # 始终保存为TXT格式文件
+        txt_output_path = output_path
+        if output_path.endswith('.docx'):
+            txt_output_path = output_path.replace('.docx', '.txt')
+        
+        # 保存为文本文件
+        with open(txt_output_path, "w", encoding="utf-8") as f:
+            f.write(final_text)
+        print(f"✅ 成功保存文本文件至：{txt_output_path}")
+    except Exception as e:
+        print(f"❌ 写入失败：{e}")
+
+
 
 # 运行主要流程
 if __name__ == "__main__":
@@ -306,7 +474,9 @@ if __name__ == "__main__":
     language = sys.argv[2]
     username = sys.argv[3]
     datetime = sys.argv[4]
-
+    software_name = platform
+    programming_language = language
+    output_path=os.path.join(BASE_DIR, "static", username, datetime, "软著注册表.txt")
     medium_path = os.path.join(BASE_DIR, "medium", username, datetime)
     final_path = os.path.join(BASE_DIR, "static", username, datetime)
     if not os.path.exists(medium_path):
@@ -317,14 +487,14 @@ if __name__ == "__main__":
     output_path_1 = medium_path  # 保存各层的代码文档
     output_path_2 = final_path  # 保存合并后的总代码文档
 
-    # 第1次提问:扩充软著描述，第2次提问：软著实现整体框架
-    expanded_description = first_prompt(platform, language, os.path.join(medium_path, "expanded_description.txt"),
-                                        os.path.join(final_path, "expanded_description.txt"))  # 第一次提问，获得对软著名的扩充描述，并保存到txt
-    code_framework = second_prompt(language, expanded_description,os.path.join(medium_path, "code_framework.txt"))  # 第二次提问，获得对软著实现的框架性语言，并保存到txt
-
-    # 调用函数，传入文件路径
+# 调用函数，传入文件路径
     file_path = os.path.join(medium_path, "menu.json")
-    json_answer = analyze_file(file_path, os.path.join(medium_path, "json_analysis.txt"))  # 获得对后续数据库代码实现的补充提示词，并保存到txt
+    json_answer = analyze_file(file_path, os.path.join(medium_path, "json_analysis.txt"))
+    # 第1次提问:扩充软著描述，第2次提问：软著实现整体框架
+  
+    #expanded_description = first_prompt(platform, language, os.path.join(medium_path, "expanded_description.txt"),
+    #                                    os.path.join(final_path, "expanded_description.txt"))  # 第一次提问，获得对软著名的扩充描述，并保存到txt
+    code_framework = second_prompt(language, json_answer,os.path.join(medium_path, "code_framework.txt"))  # 第二次提问，获得对软著实现的框架性语言，并保存到txt
 
     # 并发生成代码
     layer_codes = generate_all_layers_concurrently(language, code_framework, json_answer)
@@ -343,7 +513,7 @@ if __name__ == "__main__":
             file_paths.append(frontend_code_path)
             print(f"检测到前端代码文件，已添加到合并列表: {frontend_code_path}")
             break
-        
+    
     
     # 添加后端层代码文件
     for layer, code in layer_codes.items():  # 获取键值对，层名-代码
@@ -355,3 +525,10 @@ if __name__ == "__main__":
     merged_file_path = os.path.join(output_path_2, "merged_code.docx")
     merge_word_documents(file_paths, merged_file_path, platform)
     main_pdf(username, datetime)
+    #生成软著注册表
+    #读取function.txt文件
+    tech_features = extract_technical_features_from_file(username, datetime)
+    #生成软著注册表
+    print(f"技术特点: {tech_features}")
+    print(f"生成软著注册表: 软件名称={software_name}, 编程语言={programming_language}")
+    generate_and_save_txt(output_path)
