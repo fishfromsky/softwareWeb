@@ -385,34 +385,12 @@ def generate_main_function(software_name,tech_features):
     
     initial_content = initial_response.choices[0].message.content.strip()
     
-<<<<<<< HEAD
-#     # 添加第二轮对话：检查字数并要求修改（如需要）
-#     second_prompt = f"""
-# 请检查你的回答是否符合字数要求（100~200字）。如果不符合，请修改你的回答使其符合字数要求，同时保持内容质量。当前回答：
-# {initial_content}
-# """
-#     # 更新对话历史
-#     messages.append({'role': 'assistant', 'content': initial_content})
-#     messages.append({'role': 'user', 'content': second_prompt})
-    
-#     # 获取最终响应
-#     final_response = client.chat.completions.create(
-#         model="qwen2.5-coder-32b-instruct",
-#         messages=messages
-#     )
-    
-=======
->>>>>>> 4be8fcfacc4389e117d1d33cf4f4d36fa7a01ee0
     return initial_content
 def generate_main_function_num(tech_features):
     # 首次询问
     prompt = f"""请描述以下主要功能内容，务必注意内容长度必须大于100个字符，同时小于200个字符：
 {tech_features}
-<<<<<<< HEAD
-只返回修改后的内容。不需要额外描述。
-=======
 只返回修改后的内容。不要插入任何解释或说明。
->>>>>>> 4be8fcfacc4389e117d1d33cf4f4d36fa7a01ee0
 """
     messages = [{'role': 'user', 'content': prompt}]
     
