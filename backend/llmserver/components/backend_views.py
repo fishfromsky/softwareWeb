@@ -370,22 +370,76 @@ def generate_fields_via_model():
     return get_model_register_response(messages)
 # === 生成主要功能描述（简洁版，不判定长度）===
 def generate_main_function(software_name,tech_features):
+    # 首次询问
     prompt = f"""
 请根据已有的软件功能总结生成一段中文描述说明其主要功能，务必注意内容长度必须大于100个字符，同时小于200个字符。\n
 {tech_features}
 """
     messages = [{'role': 'user', 'content': prompt}]
-    response = client.chat.completions.create(
-        model="qwen2.5-coder-32b-instruct",
+    
+    # 获取初步响应
+    initial_response = client.chat.completions.create(
+        model="qwen-plus-2025-01-25",
         messages=messages
     )
-    return response.choices[0].message.content.strip()
-# === 总结技术特点（20~100字）
+    
+    initial_content = initial_response.choices[0].message.content.strip()
+    
+#     # 添加第二轮对话：检查字数并要求修改（如需要）
+#     second_prompt = f"""
+# 请检查你的回答是否符合字数要求（100~200字）。如果不符合，请修改你的回答使其符合字数要求，同时保持内容质量。当前回答：
+# {initial_content}
+# """
+#     # 更新对话历史
+#     messages.append({'role': 'assistant', 'content': initial_content})
+#     messages.append({'role': 'user', 'content': second_prompt})
+    
+#     # 获取最终响应
+#     final_response = client.chat.completions.create(
+#         model="qwen2.5-coder-32b-instruct",
+#         messages=messages
+#     )
+    
+    return initial_content
+def generate_main_function_num(tech_features):
+    # 首次询问
+    prompt = f"""请描述以下主要功能内容，务必注意内容长度必须大于100个字符，同时小于200个字符：
+{tech_features}
+只返回修改后的内容。不需要额外描述。
+"""
+    messages = [{'role': 'user', 'content': prompt}]
+    
+    # 获取初步响应
+    initial_response = client.chat.completions.create(
+        model="qwen-plus-2025-01-25",
+        messages=messages
+    )
+    
+    initial_content = initial_response.choices[0].message.content.strip()
+    
+#     # 添加第二轮对话：检查字数并要求修改（如需要）
+#     second_prompt = f"""
+# 请检查你的回答是否符合字数要求（100~200字）。如果不符合，请修改你的回答使其符合字数要求，同时保持内容质量。当前回答：
+# {initial_content}
+# """
+#     # 更新对话历史
+#     messages.append({'role': 'assistant', 'content': initial_content})
+#     messages.append({'role': 'user', 'content': second_prompt})
+    
+#     # 获取最终响应
+#     final_response = client.chat.completions.create(
+#         model="qwen2.5-coder-32b-instruct",
+#         messages=messages
+#     )
+    
+    return initial_content
+# === 总结技术特点
 def summarize_technical_features(raw_features):
     # 第一段对话：提供软件著作权的技术特点资料
     first_message = {
         'role': 'user', 
-        'content': """软件著作权的技术特点主要涉及软件的创新性和原创性，包括以下方面：
+        'content': """你现在是一个完成网页开发的精准控制书写字数的学者，请学习如何生成软件著作权的技术特点。并等待我的提问
+        软件著作权的技术特点主要涉及软件的创新性和原创性，包括以下方面：
 1：创新性：软件著作权要求软件必须具有一定的创新性，即相对于已有的软件，具有独特的技术和功能。这个特点通常需要通过技术分析、代码分析等手段来证明。
 2：原创性：软件著作权还要求软件必须由软件开发者自己创作或者有合法的来源，不得侵犯他人的知识产权。这个特点需要在软件开发的过程中遵循相关的知识产权法律法规，避免侵权行为。
 3：可复制性：软件著作权的另一个重要特点是可复制性，即软件可以通过复制的方式进行传播和使用。因此，在软件开发的过程中需要考虑软件的安全性和版权保护，防止软件被非法复制和使用。
@@ -395,14 +449,14 @@ def summarize_technical_features(raw_features):
     
     # 模型响应第一段对话
     first_response = client.chat.completions.create(
-        model="qwen2.5-coder-32b-instruct",
+        model="qwen-max",
         messages=[first_message]
     )
     
     # 第二段对话：询问生成技术特点
     second_message = {
         'role': 'user',
-        'content': f"""已有一款软件的软件功能描述，现在需要生成这款软件的技术特点，回复中避免数据字样如准确率等等，回复字数：20~100字：
+        'content': f"""已有一款软件的软件功能描述，现在需要生成这款软件的技术特点，参考给予的资料，回复中避免数据字样如准确率等等，回复字数：20~100字：
 {raw_features}"""
     }
     
@@ -413,13 +467,33 @@ def summarize_technical_features(raw_features):
         second_message
     ]
     
-    # 获取最终响应
+    # 获取初步响应
+    initial_response = client.chat.completions.create(
+        model="qwen-max",
+        messages=messages
+    )
+    
+    initial_content = initial_response.choices[0].message.content.strip()
+    
+
+    
+    return initial_content
+
+# === 总结技术特点（20~100字）
+def summarize_technical_features_num(raw_features):
+    prompt = f"""
+请将以下技术特点内容压缩为20到100个字符之间的简明描述，保持主要含义，风格专业：
+{raw_features}
+只返回压缩后的内容。
+"""
+    messages = [{'role': 'user', 'content': prompt}]
     response = client.chat.completions.create(
         model="qwen2.5-coder-32b-instruct",
         messages=messages
     )
-    
     return response.choices[0].message.content.strip()
+
+
 # === 根据技术特点内容判断最合适的选项
 def choose_tech_option(summary):
     options = ["APP", "游戏软件", "人工智能软件", "金融软件", "大数据软件", "云计算软件", "信息安全软件", "小程序", "物联网", "智慧城市软件"]
@@ -445,8 +519,10 @@ def generate_and_save_txt(output_path):
 
     # 生成所有部分
     model_fields = generate_fields_via_model().splitlines()
-    main_function = generate_main_function(software_name,tech_features)
-    summarized_tech = summarize_technical_features(tech_features)
+    main_function_nonum = generate_main_function(software_name,tech_features)
+    main_function = generate_main_function_num(main_function_nonum)
+    initial_content = summarize_technical_features(tech_features)
+    summarized_tech = summarize_technical_features_num(initial_content)
     tech_option = choose_tech_option(summarized_tech)
 
     # 插入语言/行数
