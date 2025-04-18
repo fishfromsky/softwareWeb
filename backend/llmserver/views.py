@@ -567,7 +567,6 @@ def getPageInfo(request): # 根据前端返回的当前点击的侧边栏id生�
         processed_code = process_frontend_code(content_save)
             
         doc = Document()
-
         doc.add_paragraph(processed_code)
         frontend_doc_path = os.path.join(MEDIUM_PATH, username, datetime, "webfront", f"前端_code_{menu_item}.docx")
         doc.save(frontend_doc_path)
